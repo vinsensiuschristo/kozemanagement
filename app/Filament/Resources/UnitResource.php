@@ -61,6 +61,16 @@ class UnitResource extends Resource
                     ->label('Alamat')
                     ->nullable()
                     ->maxLength(255),
+                Forms\Components\FileUpload::make('foto_unit')
+                    ->label('Foto Unit')
+                    ->multiple()
+                    ->image()
+                    ->reorderable()
+                    ->directory('unit/foto')
+                    ->preserveFilenames()
+                    ->helperText('Upload foto-foto unit (bisa lebih dari satu)')
+                    ->columnSpanFull(),
+
             ])->columns([
                 'sm' => 2,
                 'md' => 3,

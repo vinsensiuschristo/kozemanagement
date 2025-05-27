@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class TestingAdminResource extends Resource
 {
@@ -21,7 +22,7 @@ class TestingAdminResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        if (auth()->user()->hasRole('Admin')) {
+        if (Auth::user()?->hasRole('Admin')) {
             return true;
         } else {
             return false;

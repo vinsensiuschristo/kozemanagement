@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\TextFilter;
+use Illuminate\Support\Str;
 
 class OwnerResource extends Resource
 {
@@ -28,12 +29,39 @@ class OwnerResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\Select::make('user_id')
+                    ->label('User terkait')
+                    ->relationship('user', 'name')
+                    ->required(),
+
                 Forms\Components\TextInput::make('nama')
                     ->label('Nama')
                     ->required()
                     ->unique(ignorable: fn(?Owner $record) => $record)
                     ->maxLength(50),
-
+                Forms\Components\TextInput::make('tempat_lahir')
+                    ->label('Tempat Lahir')
+                    ->nullable()
+                    ->maxLength(50)
+                    ->required(),
+                Forms\Components\DatePicker::make('tanggal_lahir')
+                    ->label('Tanggal Lahir')
+                    ->nullable()
+                    ->minDate(now()->subYears(100))
+                    ->maxDate(now()),
+                Forms\Components\Select::make('agama')
+                    ->label('Agama')
+                    ->options([
+                        'Islam' => 'Islam',
+                        'Kristen' => 'Kristen',
+                        'Katolik' => 'Katolik',
+                        'Hindu' => 'Hindu',
+                        'Buddha' => 'Buddha',
+                        'Konghucu' => 'Konghucu',
+                        'Lainnya' => 'Lainnya',
+                    ])
+                    ->nullable()
+                    ->required(),
                 Forms\Components\TextInput::make('nomor_telepon')
                     ->label('Nomor Telepon')
                     ->placeholder('Contoh: +6281234567890')
@@ -41,20 +69,40 @@ class OwnerResource extends Resource
                     ->nullable()
                     ->unique(ignorable: fn(?Owner $record) => $record)
                     ->maxLength(15)
-                    ->rules(['regex:/^\+?\d{9,15}$/']),
-
+                    ->rules(['regex:/^\+?\d{9,15}$/'])
+                    ->required(),
                 Forms\Components\TextInput::make('email')
                     ->label('Email')
                     ->nullable()
                     ->email()
                     ->unique(ignorable: fn(?Owner $record) => $record)
-                    ->maxLength(50),
-
+                    ->maxLength(50)
+                    ->required(),
                 Forms\Components\TextInput::make('alamat')
                     ->label('Alamat')
                     ->nullable()
-                    ->maxLength(255),
-
+                    ->maxLength(255)
+                    ->required(),
+                Forms\Components\Select::make('bank')
+                    ->label('Bank')
+                    ->options([
+                        'BCA' => 'BCA',
+                        'BNI' => 'BNI',
+                        'BRI' => 'BRI',
+                        'Mandiri' => 'Mandiri',
+                        'Lainnya' => 'Lainnya',
+                    ])
+                    ->nullable()
+                    ->required(),
+                Forms\Components\TextInput::make('nomor_rekening')
+                    ->label('Nomor Rekening')
+                    ->placeholder('Contoh: 1234567890')
+                    ->helperText('Masukkan nomor rekening tanpa spasi atau karakter khusus')
+                    ->nullable()
+                    ->unique(ignorable: fn(?Owner $record) => $record)
+                    ->maxLength(20)
+                    ->rules(['regex:/^\d{10,20}$/'])
+                    ->required(),
                 Forms\Components\TextInput::make('nomor_ktp')
                     ->label('Nomor KTP')
                     ->placeholder('Contoh: 327501xxxxxxxxxx')
@@ -62,7 +110,19 @@ class OwnerResource extends Resource
                     ->nullable()
                     ->unique(ignorable: fn(?Owner $record) => $record)
                     ->maxLength(16)
-                    ->rules(['regex:/^\d{16}$/']),
+                    ->rules(['regex:/^\d{16}$/'])
+                    ->required(),
+                Forms\Components\FileUpload::make('foto_ktp')
+                    ->label('Foto')
+                    ->disk('public') // storage/app/public
+                    ->directory('owner/ktp') // => storage/app/public/owner/ktp
+                    ->visibility('public')
+                    ->maxWidth(400)
+                    ->maxSize(2048)
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->columnSpanFull()
+                    ->required()
+                    ->image(),
             ]);
     }
 

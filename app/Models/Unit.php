@@ -22,4 +22,9 @@ class Unit extends Model
     {
         return $this->belongsTo(Owner::class, 'id_owner', 'id');
     }
+
+    public function fotoUnits()
+    {
+        return $this->hasMany(FotoUnit::class);
+    }
 }

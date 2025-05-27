@@ -44,8 +44,12 @@ class UserResource extends Resource
                     ->minLength(8)
                     ->dehydrateStateUsing(fn($state) => bcrypt($state))
                     ->visibleOn('create'),
-                Select::make('role')->multiple()->relationship('roles', 'name')
+                Select::make('role')
+                    ->multiple()
+                    ->relationship('roles', 'name')
                     ->label('Roles')
+                    ->searchable()
+                    ->preload(false)
                     ->required()
             ]);
     }

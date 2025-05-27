@@ -29,9 +29,18 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+
             // tambahan
             ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
             ->sidebarCollapsibleOnDesktop(true)
+            // ->brand(view('components.filament.brand'))
+            ->brandName('Koze Management')
+            ->brandLogo(
+                asset('images/logo.png'),
+            )
+            ->brandLogoHeight(
+                '2.5rem',
+            )
 
             ->colors([
                 'primary' => Color::Amber,
