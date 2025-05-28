@@ -13,6 +13,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Tables\Filters\Filter;
+use Filament\Facades\Filament;
 
 class UnitResource extends Resource
 {
@@ -136,5 +137,29 @@ class UnitResource extends Resource
             'create' => Pages\CreateUnit::route('/create'),
             'edit' => Pages\EditUnit::route('/{record}/edit'),
         ];
+    }
+
+    public static function canCreate(): bool
+    {
+        return !auth()->user()->hasRole(['SuperAdmin', 'Admin'], 'web');
+    }
+
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        $user = auth()->user();
+
+        if ($user && $user->hasRole('Owner')) {
+            $owner = $user->owner;
+            if ($owner) {
+                $query->where('id_owner', $owner->id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+
+        return $query;
     }
 }
