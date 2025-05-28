@@ -15,9 +15,15 @@ class JenisKamar extends Model
         'deskripsi',
     ];
 
-    public function fotoKamar()
+    // lama
+    // public function fotoKamar()
+    // {
+    //     return $this->hasMany(DetailFotoKamar::class, 'id_jenis_kamar');
+    // }
+
+    public function detailFotoKamars()
     {
-        return $this->hasMany(DetailFotoKamar::class, 'id_jenis_kamar');
+        return $this->hasMany(DetailFotoKamar::class, 'jenis_kamar_id');
     }
 
     public function fasilitasKamar()
