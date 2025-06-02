@@ -11,10 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('detail_foto_kamars', function (Blueprint $table) {
+        Schema::create('ketersediaan_kamars', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('jenis_kamar_id')->constrained('jenis_kamars')->onDelete('cascade');
-            $table->string('path');
+            $table->foreignUuid('tipe_kamar_id')->constrained('tipe_kamars')->onDelete('cascade');
+            $table->string('nama');       // nomor/nama kamar
+            $table->string('lantai');
+            $table->enum('status', ['kosong', 'booked', 'terisi'])->default('kosong');
             $table->timestamps();
         });
     }
@@ -24,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('detail_foto_kamars');
+        Schema::dropIfExists('ketersediaan_kamars');
     }
 };

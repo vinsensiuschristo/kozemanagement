@@ -3,18 +3,18 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
-class FotoUnit extends Model
+class AlamatUnit extends Model
 {
-    use HasUuids;
-
-    protected $table = 'foto_units';
+    protected $table = 'alamat_unit';
 
     protected $fillable = [
         'unit_id',
-        'kategori',
-        'path',
+        'alamat',
+        'provinsi',
+        'kabupaten',
+        'kecamatan',
+        'deskripsi',
     ];
 
     public function unit()

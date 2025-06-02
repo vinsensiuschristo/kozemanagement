@@ -4,51 +4,35 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Kamar extends Model
 {
-    use HasUuids;
+    use HasFactory, HasUuids;
 
     protected $table = 'kamars';
 
     protected $fillable = [
-        'id_unit',
-        'id_jenis_kamar',
-        'no_kamar',
-        'harga',
-        'no_kwh',
-        'status',
+        'unit_id',
+        'tipe_kamar_id',
+        'nama',
+        'lantai',
+        'terisi',
+        'ukuran',
     ];
 
     public function unit()
     {
-        return $this->belongsTo(Unit::class, 'id_unit');
+        return $this->belongsTo(\App\Models\Unit::class, 'unit_id');
     }
 
-    public function jenisKamar()
+    public function tipeKamar()
     {
-        return $this->belongsTo(JenisKamar::class, 'id_jenis_kamar');
+        return $this->belongsTo(TipeKamar::class);
     }
 
-    // Shortcut ke foto (melalui jenis kamar)
-    public function detailFotoKamar()
+    public function fotoKamar()
     {
-        // Opsi Shortcut:
-        // return $this->jenisKamar?->detailFotoKamar();
-
-        // Atau bisa juga dengan cara ini:
-        return $this->hasManyThrough(
-            DetailFotoKamar::class,
-            JenisKamar::class,
-            'id', // Foreign key di JenisKamar (local key di Kamar)
-            'jenis_kamar_id', // Foreign key di DetailFotoKamar
-            'id_jenis_kamar', // Local key di Kamar
-            'id' // Local key di JenisKamar
-        );
-    }
-
-    public static function getStatuses(): array
-    {
-        return ['tersedia', 'terisi', 'booked'];
+        return $this->hasMany(FotoKamar::class);
     }
 }

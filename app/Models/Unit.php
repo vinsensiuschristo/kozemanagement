@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Unit extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
+
+    public $incrementing = false;
+    protected $keyType = 'uuid';
 
     protected $fillable = [
         'id_owner',
@@ -15,16 +19,60 @@ class Unit extends Model
         'tanggal_awal_kontrak',
         'tanggal_akhir_kontrak',
         'nama_cluster',
-        'alamat',
+        'multi_tipe',
+        'disewakan_untuk',
+        'deskripsi',
+        'tahun_dibangun',
+        'nomor_kontrak',
+        'tanggal_awal_kontrak',
+        'tanggal_akhir_kontrak',
     ];
+
+    public function tipeKamars()
+    {
+        return $this->hasMany(\App\Models\TipeKamar::class, 'unit_id');
+    }
+
+    public function alamat()
+    {
+        return $this->hasOne(AlamatUnit::class, 'unit_id');
+    }
+
+    public function fotoUnit()
+    {
+        return $this->hasMany(FotoUnit::class, 'unit_id');
+    }
+
+    public function fasilitasUnits()
+    {
+        return $this->hasMany(FasilitasUnit::class, 'unit_id', 'id');
+    }
+
+    public function fasilitas()
+    {
+        return $this->belongsToMany(Fasilitas::class, 'fasilitas_units', 'unit_id', 'fasilitas_id')->withTimestamps();
+    }
 
     public function owner()
     {
-        return $this->belongsTo(Owner::class, 'id_owner', 'id');
+        return $this->belongsTo(Owner::class, 'id_owner');
     }
 
-    public function fotoUnits()
+
+    public function kamars()
     {
-        return $this->hasMany(FotoUnit::class);
+        return $this->hasMany(\App\Models\Kamar::class, 'unit_id');
+    }
+
+    public function hargaKamars()
+    {
+        return $this->hasManyThrough(
+            HargaKamar::class,
+            TipeKamar::class,
+            'unit_id',       // FK di tipe_kamars
+            'tipe_kamar_id', // FK di harga_kamars
+            'id',            // PK di units
+            'id'             // PK di tipe_kamars
+        );
     }
 }

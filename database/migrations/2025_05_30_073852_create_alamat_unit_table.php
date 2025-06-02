@@ -11,11 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('foto_units', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+        Schema::create('alamat_unit', function (Blueprint $table) {
+            $table->id();
             $table->foreignUuid('unit_id')->constrained('units')->onDelete('cascade');
-            $table->enum('kategori', ['depan', 'dalam', 'jalan']);
-            $table->string('path');
+            $table->text('alamat');
+            $table->string('provinsi');
+            $table->string('kabupaten');
+            $table->string('kecamatan');
+            $table->text('deskripsi')->nullable();
             $table->timestamps();
         });
     }
@@ -25,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('foto_units');
+        Schema::dropIfExists('alamat_kos');
     }
 };

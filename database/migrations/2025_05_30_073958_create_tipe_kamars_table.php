@@ -11,11 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('foto_units', function (Blueprint $table) {
+        Schema::create('tipe_kamars', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('unit_id')->constrained('units')->onDelete('cascade');
-            $table->enum('kategori', ['depan', 'dalam', 'jalan']);
-            $table->string('path');
+            $table->string('nama_tipe');
             $table->timestamps();
         });
     }
@@ -25,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('foto_units');
+        Schema::dropIfExists('tipe_kamars');
     }
 };

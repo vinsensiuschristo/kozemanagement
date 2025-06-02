@@ -13,16 +13,17 @@ return new class extends Migration
     {
         Schema::create('kamars', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('id_unit');
-            $table->uuid('id_jenis_kamar');
-            $table->string('no_kamar', 10);
-            $table->integer('harga')->unsigned()->nullable();
-            $table->string('no_kwh', 50)->nullable();
-            $table->enum('status', ['tersedia', 'terisi', 'booked'])->default('tersedia');
+            $table->uuid('unit_id');
+            $table->uuid('tipe_kamar_id')->nullable();
+
+            $table->string('nama');
+            $table->string('ukuran')->nullable();
+            $table->unsignedInteger('lantai')->nullable();
+            $table->boolean('terisi')->default(false);
             $table->timestamps();
 
-            $table->foreign('id_unit')->references('id')->on('units')->onDelete('cascade');
-            $table->foreign('id_jenis_kamar')->references('id')->on('jenis_kamars')->onDelete('cascade');
+            $table->foreign('unit_id')->references('id')->on('units')->onDelete('cascade');
+            $table->foreign('tipe_kamar_id')->references('id')->on('tipe_kamars')->onDelete('set null');
         });
     }
 

@@ -13,12 +13,23 @@ return new class extends Migration
     {
         Schema::create('units', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('id_owner');
+
+            $table->foreignUuid('id_owner')->constrained('owners')->onDelete('cascade');
+
             $table->string('nomor_kontrak')->unique();
             $table->date('tanggal_awal_kontrak');
             $table->date('tanggal_akhir_kontrak');
+
             $table->string('nama_cluster')->nullable()->unique();
-            $table->string('alamat')->nullable();
+            $table->boolean('multi_tipe')->default(false);
+            $table->enum('disewakan_untuk', ['putra', 'putri', 'campur']);
+            $table->text('deskripsi')->nullable();
+            $table->year('tahun_dibangun')->nullable();
+
+            // $table->string('alamat')->nullable();
+
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
+
             $table->timestamps();
         });
     }

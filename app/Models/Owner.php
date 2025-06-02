@@ -10,6 +10,7 @@ class Owner extends Model
     use HasUuids;
     protected $fillable = [
         'nama',
+        'user_id',
         'tempat_lahir',
         'tanggal_lahir',
         'agama',

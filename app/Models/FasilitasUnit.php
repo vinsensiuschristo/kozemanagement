@@ -5,20 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
-class FotoUnit extends Model
+class FasilitasUnit extends Model
 {
     use HasUuids;
-
-    protected $table = 'foto_units';
+    protected $table = 'fasilitas_units';
 
     protected $fillable = [
         'unit_id',
-        'kategori',
-        'path',
+        'fasilitas_id',
     ];
 
     public function unit()
     {
         return $this->belongsTo(Unit::class, 'unit_id');
+    }
+
+    public function fasilitas()
+    {
+        return $this->belongsTo(Fasilitas::class, 'fasilitas_id');
     }
 }
