@@ -14,6 +14,27 @@ class CreateUnit extends CreateRecord
     protected static string $resource = UnitResource::class;
     protected array $fasilitasTerpilih = [];
 
+    public array $tipeKamarOptions = [];
+
+    public function updated($name, $value): void
+    {
+        if ($name === 'data.tipe_kamars') {
+            $this->updateTipeKamarOptions($value);
+        }
+    }
+
+
+    public function updateTipeKamarOptions(array $tipeKamars)
+    {
+        $this->tipeKamarOptions = collect($tipeKamars)
+            ->mapWithKeys(function ($item, $index) {
+                return [$index => $item['nama_tipe'] ?? 'Tipe ' . ($index + 1)];
+            })
+            ->toArray();
+    }
+
+
+
     /**
      * Override untuk menyimpan Unit beserta foto-fotonya
      */
@@ -65,21 +86,33 @@ class CreateUnit extends CreateRecord
         // Alamat
         $record->alamat()->create($data['alamatUnit']);
 
-        // Tipe & Harga Kamar (jika tidak multi_tipe)
-        if (!$data['multi_tipe']) {
+        // Tipe Kamar
+        $tipeKamars = [];
+        if ($data['multi_tipe']) {
+            foreach ($data['tipe_kamars'] as $tipeData) {
+                $tipe = $record->tipeKamars()->create([
+                    'nama_tipe' => $tipeData['nama_tipe'],
+                ]);
+                $tipeKamars[] = $tipe;
+            }
+        } else {
             $tipe = $record->tipeKamars()->create([
-                'nama_tipe' => 'Tipe Default',
+                'nama_tipe' => $data['nama_tipe'] ?? 'Tipe Default',
             ]);
+            $tipeKamars[] = $tipe;
+        }
 
-            foreach ($data['harga_kamars'] ?? [] as $harga) {
-                $tipe->hargaKamars()->create([
+        // Harga Kamar
+        foreach ($data['harga_kamars'] ?? [] as $index => $harga) {
+            if (isset($tipeKamars[$index])) {
+                $tipeKamars[$index]->hargaKamars()->create([
                     'harga_perbulan' => $harga['harga_perbulan'],
                     'minimal_deposit' => $harga['minimal_deposit'] ?? null,
                 ]);
             }
         }
 
-        // Foto unit
+        // Foto Unit
         foreach (['foto_kos_depan' => 'depan', 'foto_kos_dalam' => 'dalam', 'foto_kos_jalan' => 'jalan'] as $field => $kategori) {
             foreach ($data[$field] ?? [] as $path) {
                 $record->fotoUnit()->create([
@@ -98,11 +131,17 @@ class CreateUnit extends CreateRecord
             }
         }
 
-        // Tipe awal jika multi_tipe (tipe_awal hanya placeholder awal)
-        if ($data['multi_tipe'] && !empty($data['tipe_awal'])) {
-            $record->tipeKamars()->create([
-                'nama_tipe' => $data['tipe_awal'],
-            ]);
+        // Ketersediaan Kamar
+        foreach ($data['kamars'] ?? [] as $kamarData) {
+            $tipeIndex = $kamarData['tipe_kamar_id'] ?? null;
+            if ($tipeIndex !== null && isset($tipeKamars[$tipeIndex])) {
+                $tipeKamars[$tipeIndex]->ketersediaanKamars()->create([
+                    'nama' => $kamarData['nama'],
+                    'lantai' => $kamarData['lantai'] ?? null,
+                    'ukuran' => $kamarData['ukuran'] ?? null,
+                    'terisi' => $kamarData['terisi'] ?? false,
+                ]);
+            }
         }
     }
 }

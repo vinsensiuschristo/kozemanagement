@@ -33,6 +33,10 @@ use function Pest\Laravel\options;
 use Filament\Forms\Get;
 use Filament\Infolists\Components\Fieldset;
 use Filament\Forms\Set;
+use Closure;
+use function Filament\Forms\getLivewire;
+
+
 
 
 class UnitResource extends Resource
@@ -52,7 +56,7 @@ class UnitResource extends Resource
                 Step::make('Data Kos')->schema([
                     Select::make('id_owner')
                         ->label('Pemilik Kos')
-                        ->relationship('owner', 'nama') // Asumsikan relasi Unit → Owner sudah diset dengan relasi `owner()`
+                        ->relationship('owner', 'nama') // Asumsikan relasi Unit → Owner sudah diset dengan relasi owner()
                         ->required(),
 
                     TextInput::make('nama_cluster')
@@ -188,19 +192,41 @@ class UnitResource extends Resource
                 // STEP 5: TIPE KAMAR
 
                 Step::make('Tipe Kamar')
-                    ->visible(fn(Get $get) => $get('multi_tipe') === true)
                     ->schema([
-                        TextInput::make('tipe_awal')
-                            ->label('Nama Tipe')
-                            ->required(),
+                        Repeater::make('tipe_kamars')
+                            ->label('Daftar Tipe Kamar')
+                            ->schema([
+                                TextInput::make('nama_tipe')
+                                    ->label('Nama Tipe Kamar')
+                                    ->required(),
+                            ])
+                            ->defaultItems(1)
+                            ->minItems(1)
+                            ->visible(fn(Get $get) => $get('multi_tipe') === true)
+                            ->reactive(),
+
+                        TextInput::make('nama_tipe')
+                            ->label('Nama Tipe Kamar')
+                            ->required()
+                            ->visible(fn(Get $get) => $get('multi_tipe') === false),
                     ]),
 
+
+
                 // STEP 6: KETERSEDIAAN KAMAR
+                // ini pake nama id tapi nanti kalau mau save ke database harus pake nama tipe_kamar_id
                 Step::make('Ketersediaan Kamar')->schema([
                     Repeater::make('kamars')
                         ->label('Detail Kamar')
-                        ->relationship('kamars') // Hubungkan langsung ke relasi di model
                         ->schema([
+                            Select::make('tipe_kamar_id')
+                                ->label('Tipe Kamar')
+                                ->required()
+                                ->options(
+                                    fn($livewire) => collect($livewire->data['tipe_kamars'] ?? [])
+                                        ->mapWithKeys(fn($tipe, $index) => [$index => $tipe['nama_tipe'] ?? "Tipe #$index"])
+                                        ->toArray()
+                                ),
                             TextInput::make('nama')->label('Nama / Nomor Kamar')->required(),
                             TextInput::make('lantai')->label('Lantai')->numeric()->nullable(),
                             TextInput::make('ukuran')->label('Ukuran Kamar')->nullable(),
@@ -211,6 +237,7 @@ class UnitResource extends Resource
                         ->defaultItems(1)
                         ->createItemButtonLabel('Tambah Kamar'),
                 ]),
+
 
 
 

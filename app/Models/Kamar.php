@@ -28,7 +28,7 @@ class Kamar extends Model
 
     public function tipeKamar()
     {
-        return $this->belongsTo(TipeKamar::class);
+        return $this->belongsTo(TipeKamar::class, 'tipe_kamar_id', 'id');
     }
 
     public function fotoKamar()
