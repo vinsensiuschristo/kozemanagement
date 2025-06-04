@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
+use App\Models\FasilitasUnit;
 
 
 class TipeKamar extends Model
@@ -51,5 +52,10 @@ class TipeKamar extends Model
     public function hargaKamars()
     {
         return $this->hasOne(\App\Models\HargaKamar::class, 'tipe_kamar_id', 'id');
+    }
+
+    public function fasilitasKos()
+    {
+        return $this->hasMany(FasilitasUnit::class, 'tipe_kamar_id');
     }
 }

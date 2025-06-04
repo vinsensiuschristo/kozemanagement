@@ -16,6 +16,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\Group;
 use Filament\Forms\Components\DatePicker;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
@@ -35,6 +36,7 @@ use Filament\Infolists\Components\Fieldset;
 use Filament\Forms\Set;
 use Closure;
 use function Filament\Forms\getLivewire;
+use Illuminate\Support\Str;
 
 
 
@@ -125,8 +127,6 @@ class UnitResource extends Resource
                         ->nullable(),
                 ]),
 
-
-
                 // STEP 3: DATA KONTRAK
                 Step::make('Data Kontrak')
                     ->schema([
@@ -153,115 +153,185 @@ class UnitResource extends Resource
                     FileUpload::make('foto_kos_jalan')->label('Foto Tampak Dari Jalan')->multiple()->directory('foto_kos/jalan')->reorderable(),
                 ]),
 
-                // STEP 4: FASILITAS
-                Step::make('Fasilitas Kos')
-                    ->schema([
-                        Forms\Components\Section::make('Fasilitas Umum')
-                            ->schema([
-                                Forms\Components\CheckboxList::make('fasilitas_umum')
-                                    ->label('Pilih Fasilitas Umum')
-                                    ->options(Fasilitas::where('tipe', 'umum')->pluck('nama', 'id'))
-                                    ->columnSpanFull()
-                            ]),
-
-                        Forms\Components\Section::make('Fasilitas Kamar')
-                            ->schema([
-                                Forms\Components\CheckboxList::make('fasilitas_kamar')
-                                    ->label('Pilih Fasilitas Kamar')
-                                    ->options(Fasilitas::where('tipe', 'kamar')->pluck('nama', 'id'))
-                                    ->columnSpanFull()
-                            ]),
-
-                        Forms\Components\Section::make('Fasilitas Kamar Mandi')
-                            ->schema([
-                                Forms\Components\CheckboxList::make('fasilitas_kamar_mandi')
-                                    ->label('Pilih Fasilitas Kamar Mandi')
-                                    ->options(Fasilitas::where('tipe', 'kamar_mandi')->pluck('nama', 'id'))
-                                    ->columnSpanFull()
-                            ]),
-
-                        Forms\Components\Section::make('Fasilitas Parkir')
-                            ->schema([
-                                Forms\Components\CheckboxList::make('fasilitas_parkir')
-                                    ->label('Pilih Fasilitas Parkir')
-                                    ->options(Fasilitas::where('tipe', 'parkir')->pluck('nama', 'id'))
-                                    ->columnSpanFull()
-                            ]),
-                    ]),
-
-                // STEP 5: TIPE KAMAR
-
+                // STEP 4: TIPE KAMAR
                 Step::make('Tipe Kamar')
                     ->schema([
                         Repeater::make('tipe_kamars')
                             ->label('Daftar Tipe Kamar')
                             ->schema([
+                                TextInput::make('id') // UUID disimpan secara eksplisit
+                                    ->hidden()
+                                    ->default(fn() => (string) Str::uuid()),
+
                                 TextInput::make('nama_tipe')
-                                    ->label('Nama Tipe Kamar')
+                                    ->label('Nama Tipe')
+                                    ->required(),
+
+                                TextInput::make('ukuran')
+                                    ->label('Ukuran')
                                     ->required(),
                             ])
                             ->defaultItems(1)
                             ->minItems(1)
+                            ->createItemButtonLabel('Tambah Tipe Kamar')
                             ->visible(fn(Get $get) => $get('multi_tipe') === true)
                             ->reactive(),
 
                         TextInput::make('nama_tipe')
                             ->label('Nama Tipe Kamar')
                             ->required()
-                            ->visible(fn(Get $get) => $get('multi_tipe') === false),
+                            ->visible(fn(Get $get) => $get('multi_tipe') === false)
+                            ->default('Tipe Kos Umum'),
+                    ]),
+
+                // STEP 5: FASILITAS
+                // Step::make('Fasilitas Kamar')
+                //     ->schema([
+                //         // Jika multi_tipe
+                //         Repeater::make('fasilitas_per_tipe')
+                //             ->label('Fasilitas per Tipe Kamar')
+                //             ->visible(fn($livewire) => $livewire->data['multi_tipe'] ?? false)
+                //             ->schema([
+                //                 Select::make('tipe_kamar_index')
+                //                     ->label('Tipe Kamar')
+                //                     ->required()
+                //                     ->options(function ($livewire) {
+                //                         return collect($livewire->data['tipe_kamars'] ?? [])
+                //                             ->mapWithKeys(fn($tipe, $index) => [$index => $tipe['nama_tipe'] ?? "Tipe #$index"])
+                //                             ->toArray();
+                //                     }),
+
+                //                 CheckboxList::make('fasilitas_umum')
+                //                     ->label('Fasilitas Umum')
+                //                     ->options(Fasilitas::where('tipe', 'umum')->pluck('nama', 'id'))
+                //                     ->columns(2),
+
+                //                 CheckboxList::make('fasilitas_kamar')
+                //                     ->label('Fasilitas Kamar')
+                //                     ->options(Fasilitas::where('tipe', 'kamar')->pluck('nama', 'id'))
+                //                     ->columns(2),
+
+                //                 CheckboxList::make('fasilitas_kamar_mandi')
+                //                     ->label('Fasilitas Kamar Mandi')
+                //                     ->options(Fasilitas::where('tipe', 'kamar_mandi')->pluck('nama', 'id'))
+                //                     ->columns(2),
+
+                //                 CheckboxList::make('fasilitas_parkir')
+                //                     ->label('Fasilitas Parkir')
+                //                     ->options(Fasilitas::where('tipe', 'parkir')->pluck('nama', 'id'))
+                //                     ->columns(2),
+                //             ])
+                //             ->columns(1)
+                //             ->default(function ($livewire) {
+                //                 return collect($livewire->data['tipe_kamars'] ?? [])
+                //                     ->map(function ($tipe, $index) {
+                //                         return [
+                //                             'tipe_kamar_index' => $index,
+                //                             'fasilitas_umum' => [],
+                //                             'fasilitas_kamar' => [],
+                //                             'fasilitas_kamar_mandi' => [],
+                //                             'fasilitas_parkir' => [],
+                //                         ];
+                //                     })
+                //                     ->toArray();
+                //             }),
+
+
+                //         // Jika bukan multi_tipe
+                //         Group::make()
+                //             ->visible(fn($livewire) => !($livewire->data['multi_tipe'] ?? false))
+                //             ->schema([
+                //                 CheckboxList::make('fasilitas_umum')
+                //                     ->label('Fasilitas Umum')
+                //                     ->options(Fasilitas::where('tipe', 'umum')->pluck('nama', 'id'))
+                //                     ->columns(2),
+
+                //                 CheckboxList::make('fasilitas_kamar')
+                //                     ->label('Fasilitas Kamar')
+                //                     ->options(Fasilitas::where('tipe', 'kamar')->pluck('nama', 'id'))
+                //                     ->columns(2),
+
+                //                 CheckboxList::make('fasilitas_kamar_mandi')
+                //                     ->label('Fasilitas Kamar Mandi')
+                //                     ->options(Fasilitas::where('tipe', 'kamar_mandi')->pluck('nama', 'id'))
+                //                     ->columns(2),
+
+                //                 CheckboxList::make('fasilitas_parkir')
+                //                     ->label('Fasilitas Parkir')
+                //                     ->options(Fasilitas::where('tipe', 'parkir')->pluck('nama', 'id'))
+                //                     ->columns(2),
+                //             ]),
+                //     ]),
+                Step::make('Fasilitas per Tipe Kamar')
+
+                    ->schema([
+                        Repeater::make('fasilitas_per_tipe')
+                            ->label('Fasilitas Kamar')
+                            ->schema([
+                                Select::make('tipe_kamar_id')
+                                    ->label('Tipe Kamar')
+                                    ->required()
+                                    ->options(
+                                        fn($livewire) => collect($livewire->data['tipe_kamars'] ?? [])
+                                            ->mapWithKeys(fn($tipe, $index) => [$index => $tipe['nama_tipe'] ?? "Tipe #$index"])
+                                    ),
+                                CheckboxList::make('fasilitas')
+                                    ->label('Pilih Fasilitas')
+                                    ->options(\App\Models\Fasilitas::all()->pluck('nama', 'id')),
+                            ])
+                            ->minItems(1)
+                            ->columns(1)
+                            ->createItemButtonLabel('Tambah Fasilitas Tipe Kamar'),
                     ]),
 
 
 
-                // STEP 6: KETERSEDIAAN KAMAR
-                // ini pake nama id tapi nanti kalau mau save ke database harus pake nama tipe_kamar_id
-                Step::make('Ketersediaan Kamar')->schema([
-                    Repeater::make('kamars')
-                        ->label('Detail Kamar')
-                        ->schema([
-                            Select::make('tipe_kamar_id')
-                                ->label('Tipe Kamar')
-                                ->required()
-                                ->options(
-                                    fn($livewire) => collect($livewire->data['tipe_kamars'] ?? [])
-                                        ->mapWithKeys(fn($tipe, $index) => [$index => $tipe['nama_tipe'] ?? "Tipe #$index"])
-                                        ->toArray()
-                                ),
-                            TextInput::make('nama')->label('Nama / Nomor Kamar')->required(),
-                            TextInput::make('lantai')->label('Lantai')->numeric()->nullable(),
-                            TextInput::make('ukuran')->label('Ukuran Kamar')->nullable(),
-                            Toggle::make('terisi')->label('Status Terisi')->default(false),
-                        ])
-                        ->columns(2)
-                        ->minItems(1)
-                        ->defaultItems(1)
-                        ->createItemButtonLabel('Tambah Kamar'),
-                ]),
-
-
-
-
-                // STEP 7: HARGA KAMAR
+                // STEP 6: HARGA KAMAR
                 Step::make('Harga Kamar')
                     ->schema([
                         Repeater::make('harga_kamars')
-                            ->label('Harga Kamar')
-                            ->visible(fn(Get $get) => $get('multi_tipe') === true || $get('multi_tipe') === false)
+                            ->label('Harga per Tipe Kamar')
                             ->schema([
-                                TextInput::make('harga_perbulan')
-                                    ->label('Harga Perbulan')
-                                    ->numeric()
-                                    ->required(),
-
-                                TextInput::make('minimal_deposit')
-                                    ->label('Minimal Deposit')
-                                    ->numeric()
-                                    ->nullable(),
+                                Select::make('tipe_kamar_id')
+                                    ->label('Tipe Kamar')
+                                    ->required()
+                                    ->options(
+                                        fn($livewire) => collect($livewire->data['tipe_kamars'] ?? [])
+                                            ->mapWithKeys(fn($tipe, $index) => [$index => $tipe['nama_tipe'] ?? "Tipe #$index"])
+                                    ),
+                                TextInput::make('harga_perbulan')->label('Harga per Bulan')->numeric()->required(),
+                                TextInput::make('minimal_deposit')->label('Minimal Deposit')->numeric()->nullable(),
                             ])
-                            ->defaultItems(1)
-                            ->minItems(1),
+                            ->minItems(1)
+                            ->columns(2)
+                            ->createItemButtonLabel('Tambah Harga'),
                     ]),
 
+
+                // STEP 7: KETERSEDIAAN KAMAR
+                // ini pake nama id tapi nanti kalau mau save ke database harus pake nama tipe_kamar_id
+                Step::make('Ketersediaan Kamar')
+                    ->schema([
+                        Repeater::make('kamars')
+                            ->label('Kamar')
+                            ->schema([
+                                Select::make('tipe_kamar_id')
+                                    ->label('Tipe Kamar')
+                                    ->required()
+                                    ->options(
+                                        fn($livewire) => collect($livewire->data['tipe_kamars'] ?? [])
+                                            ->mapWithKeys(fn($tipe, $index) => [$index => $tipe['nama_tipe'] ?? "Tipe #$index"])
+                                    ),
+                                TextInput::make('nama')->label('Nama / Nomor Kamar')->required(),
+                                TextInput::make('lantai')->label('Lantai')->numeric()->nullable(),
+                                TextInput::make('ukuran')->label('Ukuran Kamar')->nullable(),
+                                Toggle::make('terisi')->label('Status Terisi')->default(false),
+                            ])
+                            ->columns(2)
+                            ->minItems(1)
+                            ->defaultItems(1)
+                            ->createItemButtonLabel('Tambah Kamar'),
+                    ]),
 
             ])->columnSpanFull(),
         ]);
@@ -356,22 +426,25 @@ class UnitResource extends Resource
                 Section::make('Ketersediaan Kamar')
                     ->schema(
                         fn(Unit $record) =>
-                        $record->kamars->map(function ($kamar) {
-                            return Fieldset::make('Kamar ' . $kamar->nama)
-                                ->schema([
-                                    TextEntry::make('lantai')
-                                        ->label('Lantai')
-                                        ->default($kamar->lantai),
-                                    TextEntry::make('ukuran')
-                                        ->label('Ukuran Kamar')
-                                        ->default($kamar->ukuran),
-                                    TextEntry::make('terisi')
-                                        ->label('Status Terisi')
-                                        ->default($kamar->terisi ? 'Terisi' : 'Kosong'),
-                                ])
-                                ->columns(2);
+                        $record->tipeKamars->flatMap(function ($tipeKamar) {
+                            return $tipeKamar->ketersediaanKamars->map(function ($kamar) use ($tipeKamar) {
+                                return Fieldset::make("{$tipeKamar->nama_tipe} - {$kamar->nama}")
+                                    ->schema([
+                                        TextEntry::make('lantai')
+                                            ->label('Lantai')
+                                            ->default($kamar->lantai),
+                                        TextEntry::make('ukuran')
+                                            ->label('Ukuran Kamar')
+                                            ->default($kamar->ukuran),
+                                        TextEntry::make('terisi')
+                                            ->label('Status Terisi')
+                                            ->default($kamar->terisi ? 'Terisi' : 'Kosong'),
+                                    ])
+                                    ->columns(2);
+                            });
                         })->toArray()
                     ),
+
 
                 Section::make('Harga Kamar')
                     ->schema([

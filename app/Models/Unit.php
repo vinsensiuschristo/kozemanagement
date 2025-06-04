@@ -75,4 +75,9 @@ class Unit extends Model
             'id'             // PK di tipe_kamars
         );
     }
+
+    public function ketersediaanKamars()
+    {
+        return $this->hasMany(KetersediaanKamar::class, 'unit_id');
+    }
 }

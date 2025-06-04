@@ -13,11 +13,14 @@ return new class extends Migration
     {
         Schema::create('ketersediaan_kamars', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->uuid('unit_id');
             $table->foreignUuid('tipe_kamar_id')->constrained('tipe_kamars')->onDelete('cascade');
             $table->string('nama');       // nomor/nama kamar
             $table->string('lantai');
             $table->enum('status', ['kosong', 'booked', 'terisi'])->default('kosong');
             $table->timestamps();
+
+            $table->foreign('unit_id')->references('id')->on('units')->onDelete('cascade');
         });
     }
 
