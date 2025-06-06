@@ -360,44 +360,108 @@ class UnitResource extends Resource
     {
         return $infolist
             ->schema([
+                // Header Section - Informasi Utama
                 Section::make('Informasi Kos')
+                    ->description('Data dasar kos dan pemilik')
+                    ->icon('heroicon-o-home-modern')
+                    ->collapsible()
                     ->schema([
-                        TextEntry::make('nama_cluster')->label('Nama Kos'),
-                        TextEntry::make('disewakan_untuk')->label('Disewakan Untuk'),
-                        TextEntry::make('tahun_dibangun')->label('Tahun Dibangun'),
-                    ]),
+                        TextEntry::make('owner.nama')
+                            ->label('Pemilik Kos')
+                            ->icon('heroicon-o-user')
+                            ->badge()
+                            ->color('primary'),
 
-                Section::make('Alamat Kos')
+                        TextEntry::make('nama_cluster')
+                            ->label('Nama Kos')
+                            ->icon('heroicon-o-building-office-2')
+                            ->size(TextEntry\TextEntrySize::Large)
+                            ->weight('bold'),
+
+                        TextEntry::make('disewakan_untuk')
+                            ->label('Disewakan Untuk')
+                            ->badge()
+                            ->color(fn(string $state): string => match ($state) {
+                                'putra' => 'blue',
+                                'putri' => 'pink',
+                                'campur' => 'green',
+                                default => 'gray',
+                            }),
+
+                        TextEntry::make('tahun_dibangun')
+                            ->label('Tahun Dibangun')
+                            ->icon('heroicon-o-calendar'),
+
+                        TextEntry::make('deskripsi')
+                            ->label('Deskripsi')
+                            ->columnSpanFull()
+                            ->prose(),
+                    ])
+                    ->columns(2),
+
+                // Alamat Section
+                Section::make('Alamat & Lokasi')
+                    ->description('Detail alamat lengkap kos')
+                    ->icon('heroicon-o-map-pin')
+                    ->collapsible()
                     ->schema([
-                        TextEntry::make('alamat.alamat')->label('Alamat'),
-                        TextEntry::make('alamat.provinsi')->label('Provinsi'),
-                        TextEntry::make('alamat.kabupaten')->label('Kabupaten / Kota'),
-                        TextEntry::make('alamat.kecamatan')->label('Kecamatan'),
-                    ]),
+                        TextEntry::make('alamat.alamat')
+                            ->label('Alamat Lengkap')
+                            ->icon('heroicon-o-map')
+                            ->columnSpanFull(),
 
-                Section::make('Data Kontrak')
+                        TextEntry::make('alamat.provinsi')
+                            ->label('Provinsi')
+                            ->badge(),
+
+                        TextEntry::make('alamat.kabupaten')
+                            ->label('Kabupaten/Kota')
+                            ->badge(),
+
+                        TextEntry::make('alamat.kecamatan')
+                            ->label('Kecamatan')
+                            ->badge(),
+
+                        TextEntry::make('alamat.deskripsi')
+                            ->label('Deskripsi Lokasi')
+                            ->columnSpanFull()
+                            ->placeholder('Tidak ada deskripsi tambahan'),
+                    ])
+                    ->columns(3),
+
+                // Kontrak Section
+                Section::make('Informasi Kontrak')
+                    ->description('Detail kontrak dan periode sewa')
+                    ->icon('heroicon-o-document-text')
+                    ->collapsible()
                     ->schema([
-                        TextEntry::make('nomor_kontrak')->label('Nomor Kontrak'),
-                        TextEntry::make('tanggal_awal_kontrak')->label('Tanggal Awal Kontrak'),
-                        TextEntry::make('tanggal_akhir_kontrak')->label('Tanggal Akhir Kontrak'),
-                    ]),
+                        TextEntry::make('nomor_kontrak')
+                            ->label('Nomor Kontrak')
+                            ->icon('heroicon-o-hashtag')
+                            ->copyable()
+                            ->badge()
+                            ->color('success'),
 
-                Section::make('Fasilitas Kos')
-                    ->schema([
-                        TextEntry::make('fasilitasUnits.fasilitas.nama')->label('Fasilitas Umum')
-                            ->getStateUsing(fn(Unit $record) => $record->fasilitasUnits->where('fasilitas.tipe', 'umum')->pluck('fasilitas.nama')->implode(', ')),
-                        TextEntry::make('fasilitasUnits.fasilitas.nama')->label('Fasilitas Kamar')
-                            ->getStateUsing(fn(Unit $record) => $record->fasilitasUnits->where('fasilitas.tipe', 'kamar')->pluck('fasilitas.nama')->implode(', ')),
-                        TextEntry::make('fasilitasUnits.fasilitas.nama')->label('Fasilitas Kamar Mandi')
-                            ->getStateUsing(fn(Unit $record) => $record->fasilitasUnits->where('fasilitas.tipe', 'kamar_mandi')->pluck('fasilitas.nama')->implode(', ')),
-                        TextEntry::make('fasilitasUnits.fasilitas.nama')->label('Fasilitas Parkir')
-                            ->getStateUsing(fn(Unit $record) => $record->fasilitasUnits->where('fasilitas.tipe', 'parkir')->pluck('fasilitas.nama')->implode(', ')),
-                    ]),
+                        TextEntry::make('tanggal_awal_kontrak')
+                            ->label('Tanggal Mulai')
+                            ->date()
+                            ->icon('heroicon-o-play'),
 
-                Section::make('Foto Kos')
+                        TextEntry::make('tanggal_akhir_kontrak')
+                            ->label('Tanggal Berakhir')
+                            ->date()
+                            ->icon('heroicon-o-stop'),
+                    ])
+                    ->columns(3),
+
+                // Galeri Foto Section
+                Section::make('Galeri Foto Kos')
+                    ->description('Dokumentasi visual kos')
+                    ->icon('heroicon-o-photo')
+                    ->collapsible()
                     ->schema([
                         ImageEntry::make('fotoUnit_depan')
-                            ->label('Foto Kos Depan')
+                            ->label('Foto Tampak Depan')
                             ->getStateUsing(
                                 fn(Unit $record) =>
                                 $record->fotoUnit
@@ -406,11 +470,11 @@ class UnitResource extends Resource
                                     ->map(fn($path) => asset('storage/' . $path))
                                     ->toArray()
                             )
-                            ->height('300px')
+                            ->height('200px')
                             ->columnSpanFull(),
 
                         ImageEntry::make('fotoUnit_dalam')
-                            ->label('Foto Kos Dalam')
+                            ->label('Foto Interior Kos')
                             ->getStateUsing(
                                 fn(Unit $record) =>
                                 $record->fotoUnit
@@ -419,11 +483,11 @@ class UnitResource extends Resource
                                     ->map(fn($path) => asset('storage/' . $path))
                                     ->toArray()
                             )
-                            ->height('300px')
+                            ->height('200px')
                             ->columnSpanFull(),
 
                         ImageEntry::make('fotoUnit_jalan')
-                            ->label('Foto Kos Jalan')
+                            ->label('Foto Tampak dari Jalan')
                             ->getStateUsing(
                                 fn(Unit $record) =>
                                 $record->fotoUnit
@@ -432,68 +496,152 @@ class UnitResource extends Resource
                                     ->map(fn($path) => asset('storage/' . $path))
                                     ->toArray()
                             )
-                            ->height('300px')
+                            ->height('200px')
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Tipe Kamar')
-                    ->schema([
-                        TextEntry::make('tipeKamars.nama_tipe')->label('Nama Tipe Kamar')
-                            ->getStateUsing(fn(Unit $record) => $record->tipeKamars->pluck('nama_tipe')->implode(', ')),
-                    ]),
-
-                Section::make('Ketersediaan Kamar')
+                // Tipe Kamar Section - Menggunakan struktur asli
+                Section::make('Detail Tipe Kamar')
+                    ->description('Informasi lengkap setiap tipe kamar')
+                    ->icon('heroicon-o-squares-2x2')
                     ->schema(
                         fn(Unit $record) =>
-                        optional($record->tipeKamars)->flatMap(function ($tipeKamar) {
-                            return optional($tipeKamar->ketersediaanKamars)->map(function ($kamar) use ($tipeKamar) {
-                                return Fieldset::make("{$tipeKamar->nama_tipe} - {$kamar->nama}")
-                                    ->schema([
-                                        TextEntry::make('lantai')
-                                            ->label('Lantai')
-                                            ->default($kamar->lantai),
-                                        TextEntry::make('ukuran')
-                                            ->label('Ukuran Kamar')
-                                            ->default($kamar->ukuran),
-                                        TextEntry::make('terisi')
-                                            ->label('Status Terisi')
-                                            ->default($kamar->terisi ? 'Terisi' : 'Kosong'),
-                                    ])
-                                    ->columns(2);
-                            }) ?? collect();
-                        })?->toArray() ?? []  // ✅ Ubah ke array di sini
+                        $record->tipeKamars->map(function ($tipeKamar, $index) {
+                            return Section::make("Tipe Kamar: {$tipeKamar->nama_tipe}")
+                                ->description("Detail lengkap untuk {$tipeKamar->nama_tipe}")
+                                ->icon('heroicon-o-home')
+                                ->collapsible()
+                                ->collapsed($index > 0) // Collapse semua kecuali yang pertama
+                                ->schema([
+                                    // Informasi Dasar
+                                    TextEntry::make('ukuran_tipe')
+                                        ->label('Ukuran Kamar')
+                                        ->getStateUsing(fn() => $tipeKamar->ukuran ?? 'Tidak ditentukan')
+                                        ->icon('heroicon-o-arrows-pointing-out')
+                                        ->badge()
+                                        ->color('info'),
+
+                                    // Fasilitas
+                                    TextEntry::make('fasilitas_tipe')
+                                        ->label('Fasilitas Tersedia')
+                                        ->getStateUsing(
+                                            fn() =>
+                                            $tipeKamar->fasilitas
+                                                ? $tipeKamar->fasilitas->pluck('nama')->map(fn($nama) => "✓ {$nama}")->implode(', ')
+                                                : 'Belum ada fasilitas'
+                                        )
+                                        ->prose()
+                                        ->columnSpanFull(),
+
+                                    // Harga
+                                    Section::make('Informasi Harga')
+                                        ->schema([
+                                            TextEntry::make('harga_perbulan_tipe')
+                                                ->label('Harga per Bulan')
+                                                ->getStateUsing(fn() => $tipeKamar->hargaKamar?->harga_perbulan)
+                                                ->money('IDR')
+                                                ->icon('heroicon-o-banknotes')
+                                                ->color('success')
+                                                ->size(TextEntry\TextEntrySize::Large)
+                                                ->weight('bold'),
+
+                                            TextEntry::make('minimal_deposit_tipe')
+                                                ->label('Minimal Deposit')
+                                                ->getStateUsing(fn() => $tipeKamar->hargaKamar?->minimal_deposit)
+                                                ->money('IDR')
+                                                ->color('warning'),
+                                        ])
+                                        ->columns(2)
+                                        ->columnSpanFull(),
+
+                                    // Ketersediaan Kamar - Menggunakan struktur asli
+                                    Section::make('Daftar Kamar')
+                                        ->description('Status ketersediaan setiap kamar')
+                                        ->schema([
+                                            ...$tipeKamar->ketersediaanKamars?->map(function ($kamar) use ($tipeKamar) {
+                                                return Section::make("Kamar: {$kamar->nama}")
+                                                    ->schema([
+                                                        TextEntry::make('lantai_kamar')
+                                                            ->label('Lantai')
+                                                            ->getStateUsing(fn() => $kamar->lantai ?: 'Tidak ditentukan')
+                                                            ->icon('heroicon-o-building-office'),
+
+                                                        TextEntry::make('ukuran_kamar')
+                                                            ->label('Ukuran')
+                                                            ->getStateUsing(fn() => $kamar->ukuran ?: 'Sesuai tipe')
+                                                            ->icon('heroicon-o-arrows-pointing-out'),
+
+                                                        TextEntry::make('status_ketersediaan')
+                                                            ->label('Status')
+                                                            ->getStateUsing(fn() => $kamar->terisi ? 'Terisi' : 'Tersedia')
+                                                            ->badge()
+                                                            ->color(fn() => $kamar->terisi ? 'danger' : 'success')
+                                                            ->icon(fn() => $kamar->terisi ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle'),
+                                                    ])
+                                                    ->columns(3)
+                                                    ->compact();
+                                            })?->toArray() ?? [
+                                                TextEntry::make('no_rooms_available')
+                                                    ->label('Status')
+                                                    ->getStateUsing(fn() => 'Belum ada kamar yang terdaftar untuk tipe ini')
+                                                    ->color('warning')
+                                                    ->columnSpanFull()
+                                            ]
+                                        ])
+                                        ->columnSpanFull(),
+                                ])
+                                ->columns(2);
+                        })->toArray()
                     ),
 
-
-
-                Section::make('Harga Kamar')
+                // Summary Section
+                Section::make('Ringkasan Kos')
+                    ->description('Statistik keseluruhan')
+                    ->icon('heroicon-o-chart-bar')
+                    ->collapsible()
+                    ->collapsed()
                     ->schema([
-                        TextEntry::make('harga_kamars.harga_perbulan')
-                            ->label('Harga Perbulan')
-                            ->getStateUsing(function (Unit $record) {
-                                return $record->hargaKamars
-                                    ->pluck('harga_perbulan')
-                                    ->map(fn($harga) => 'Rp ' . number_format($harga, 0, ',', '.'))
-                                    ->implode(', ');
-                            }),
+                        TextEntry::make('total_tipe_kamar')
+                            ->label('Total Tipe Kamar')
+                            ->getStateUsing(fn(Unit $record) => $record->tipeKamars->count() . ' Tipe')
+                            ->badge()
+                            ->color('info'),
 
-                        TextEntry::make('harga_kamars.minimal_deposit')
-                            ->label('Minimal Deposit')
-                            ->getStateUsing(function (Unit $record) {
-                                return $record->hargaKamars
-                                    ->pluck('minimal_deposit')
-                                    ->map(fn($deposit) => 'Rp ' . number_format($deposit, 0, ',', '.'))
-                                    ->implode(', ');
-                            }),
+                        TextEntry::make('total_kamar')
+                            ->label('Total Kamar')
+                            ->getStateUsing(
+                                fn(Unit $record) =>
+                                $record->tipeKamars->sum(fn($tipe) => $tipe->ketersediaanKamars?->count() ?? 0) . ' Kamar'
+                            )
+                            ->badge()
+                            ->color('primary'),
 
-                    ]),
-            ])->columns([
-                'sm' => 1,
-                'md' => 2,
-                'lg' => 3,
-                'xl' => 4,
+                        TextEntry::make('kamar_tersedia')
+                            ->label('Kamar Tersedia')
+                            ->getStateUsing(
+                                fn(Unit $record) =>
+                                $record->tipeKamars->sum(
+                                    fn($tipe) =>
+                                    $tipe->ketersediaanKamars?->where('terisi', false)->count() ?? 0
+                                ) . ' Kamar'
+                            )
+                            ->badge()
+                            ->color('success'),
+
+                        TextEntry::make('kamar_terisi')
+                            ->label('Kamar Terisi')
+                            ->getStateUsing(
+                                fn(Unit $record) =>
+                                $record->tipeKamars->sum(
+                                    fn($tipe) =>
+                                    $tipe->ketersediaanKamars?->where('terisi', true)->count() ?? 0
+                                ) . ' Kamar'
+                            )
+                            ->badge()
+                            ->color('danger'),
+                    ])
+                    ->columns(4),
             ]);
-        // ]);
     }
 
     public static function table(Table $table): Table
