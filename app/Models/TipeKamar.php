@@ -44,11 +44,6 @@ class TipeKamar extends Model
         return $this->hasMany(FotoKamar::class, 'tipe_kamar_id', 'id');
     }
 
-    public function ketersediaanKamars()
-    {
-        return $this->hasMany(KetersediaanKamar::class, 'tipe_kamar_id', 'id');
-    }
-
     public function hargaKamars()
     {
         return $this->hasOne(\App\Models\HargaKamar::class, 'tipe_kamar_id', 'id');
@@ -57,5 +52,20 @@ class TipeKamar extends Model
     public function fasilitasKos()
     {
         return $this->hasMany(FasilitasUnit::class, 'tipe_kamar_id');
+    }
+
+    public function fasilitas()
+    {
+        return $this->belongsToMany(
+            Fasilitas::class,
+            'fasilitas_tipe_kamars',
+            'tipe_kamar_id',
+            'fasilitas_id'
+        );
+    }
+
+    public function kamars()
+    {
+        return $this->hasMany(Kamar::class, 'tipe_kamar_id');
     }
 }

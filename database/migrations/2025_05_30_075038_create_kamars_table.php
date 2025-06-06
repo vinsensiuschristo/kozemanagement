@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('nama');
             $table->string('ukuran')->nullable();
             $table->unsignedInteger('lantai')->nullable();
-            $table->boolean('terisi')->default(false);
             $table->timestamps();
 
             $table->foreign('unit_id')->references('id')->on('units')->onDelete('cascade');

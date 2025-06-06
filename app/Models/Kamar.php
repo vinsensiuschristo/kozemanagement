@@ -35,4 +35,9 @@ class Kamar extends Model
     {
         return $this->hasMany(FotoKamar::class);
     }
+
+    public function ketersediaan()
+    {
+        return $this->hasOne(KetersediaanKamar::class, 'kamar_id');
+    }
 }

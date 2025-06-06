@@ -20,4 +20,14 @@ class Fasilitas extends Model
     {
         return $this->belongsToMany(Unit::class, 'fasilitas_units', 'fasilitas_id', 'unit_id');
     }
+
+    public function tipeKamars()
+    {
+        return $this->belongsToMany(
+            TipeKamar::class,
+            'fasilitas_tipe_kamars',
+            'fasilitas_id',
+            'tipe_kamar_id'
+        );
+    }
 }

@@ -10,21 +10,12 @@ class KetersediaanKamar extends Model
     use HasUuids;
 
     protected $fillable = [
-        'unit_id',
-        'tipe_kamar_id',
-        'nama',
-        'lantai',
+        'kamar_id',
         'status',
     ];
 
-    public function tipeKamar()
+    public function kamar()
     {
-        return $this->belongsTo(TipeKamar::class, 'tipe_kamar_id');
-    }
-
-    // Model KetersediaanKamar
-    public function unit()
-    {
-        return $this->belongsTo(Unit::class);
+        return $this->belongsTo(Kamar::class);
     }
 }
