@@ -395,7 +395,8 @@ class UnitResource extends Resource
                         TextEntry::make('deskripsi')
                             ->label('Deskripsi')
                             ->columnSpanFull()
-                            ->prose(),
+                            ->prose()
+                            ->placeholder('Tidak ada deskripsi'),
                     ])
                     ->columns(2),
 
@@ -500,7 +501,7 @@ class UnitResource extends Resource
                             ->columnSpanFull(),
                     ]),
 
-                // Tipe Kamar Section - Menggunakan struktur asli
+                // Detail Tipe Kamar Section - MENGGUNAKAN KETERSEDIAAN_KAMARS
                 Section::make('Detail Tipe Kamar')
                     ->description('Informasi lengkap setiap tipe kamar')
                     ->icon('heroicon-o-squares-2x2')
@@ -511,72 +512,98 @@ class UnitResource extends Resource
                                 ->description("Detail lengkap untuk {$tipeKamar->nama_tipe}")
                                 ->icon('heroicon-o-home')
                                 ->collapsible()
-                                ->collapsed($index > 0) // Collapse semua kecuali yang pertama
+                                ->collapsed($index > 0)
                                 ->schema([
-                                    // Informasi Dasar
-                                    TextEntry::make('ukuran_tipe')
-                                        ->label('Ukuran Kamar')
-                                        ->getStateUsing(fn() => $tipeKamar->ukuran ?? 'Tidak ditentukan')
-                                        ->icon('heroicon-o-arrows-pointing-out')
-                                        ->badge()
-                                        ->color('info'),
+                                    // Informasi Harga
+                                    Section::make('Informasi Harga')
+                                        ->schema([
+                                            TextEntry::make('harga_perbulan')
+                                                ->label('Harga per Bulan')
+                                                ->getStateUsing(fn() => $tipeKamar->hargaKamars?->harga_perbulan)
+                                                ->money('IDR')
+                                                ->icon('heroicon-o-banknotes')
+                                                ->color('success')
+                                                ->size(TextEntry\TextEntrySize::Large)
+                                                ->weight('bold')
+                                                ->placeholder('Harga belum ditetapkan'),
+
+                                            TextEntry::make('minimal_deposit')
+                                                ->label('Minimal Deposit')
+                                                ->getStateUsing(fn() => $tipeKamar->hargaKamars?->minimal_deposit)
+                                                ->money('IDR')
+                                                ->color('warning')
+                                                ->placeholder('Deposit belum ditetapkan'),
+                                        ])
+                                        ->columns(2)
+                                        ->columnSpanFull(),
 
                                     // Fasilitas
                                     TextEntry::make('fasilitas_tipe')
                                         ->label('Fasilitas Tersedia')
                                         ->getStateUsing(
                                             fn() =>
-                                            $tipeKamar->fasilitas
+                                            $tipeKamar->fasilitas && $tipeKamar->fasilitas->count() > 0
                                                 ? $tipeKamar->fasilitas->pluck('nama')->map(fn($nama) => "✓ {$nama}")->implode(', ')
                                                 : 'Belum ada fasilitas'
                                         )
                                         ->prose()
                                         ->columnSpanFull(),
 
-                                    // Harga
-                                    Section::make('Informasi Harga')
-                                        ->schema([
-                                            TextEntry::make('harga_perbulan_tipe')
-                                                ->label('Harga per Bulan')
-                                                ->getStateUsing(fn() => $tipeKamar->hargaKamar?->harga_perbulan)
-                                                ->money('IDR')
-                                                ->icon('heroicon-o-banknotes')
-                                                ->color('success')
-                                                ->size(TextEntry\TextEntrySize::Large)
-                                                ->weight('bold'),
-
-                                            TextEntry::make('minimal_deposit_tipe')
-                                                ->label('Minimal Deposit')
-                                                ->getStateUsing(fn() => $tipeKamar->hargaKamar?->minimal_deposit)
-                                                ->money('IDR')
-                                                ->color('warning'),
-                                        ])
-                                        ->columns(2)
-                                        ->columnSpanFull(),
-
-                                    // Ketersediaan Kamar - Menggunakan struktur asli
+                                    // Daftar Kamar - MENGGUNAKAN KETERSEDIAAN_KAMARS
                                     Section::make('Daftar Kamar')
                                         ->description('Status ketersediaan setiap kamar')
                                         ->schema([
-                                            ...$tipeKamar->ketersediaanKamars?->map(function ($kamar) use ($tipeKamar) {
+                                            ...$tipeKamar->ketersediaanKamars?->map(function ($ketersediaanKamar) use ($tipeKamar) {
+                                                // Ambil data kamar melalui relasi
+                                                $kamar = $ketersediaanKamar->kamar;
+
                                                 return Section::make("Kamar: {$kamar->nama}")
                                                     ->schema([
-                                                        TextEntry::make('lantai_kamar')
-                                                            ->label('Lantai')
-                                                            ->getStateUsing(fn() => $kamar->lantai ?: 'Tidak ditentukan')
-                                                            ->icon('heroicon-o-building-office'),
-
+                                                        // Ukuran Kamar - dari model Kamar
                                                         TextEntry::make('ukuran_kamar')
                                                             ->label('Ukuran')
-                                                            ->getStateUsing(fn() => $kamar->ukuran ?: 'Sesuai tipe')
-                                                            ->icon('heroicon-o-arrows-pointing-out'),
-
-                                                        TextEntry::make('status_ketersediaan')
-                                                            ->label('Status')
-                                                            ->getStateUsing(fn() => $kamar->terisi ? 'Terisi' : 'Tersedia')
+                                                            ->getStateUsing(fn() => $kamar->ukuran ?? 'Tidak ditentukan')
+                                                            ->icon('heroicon-o-arrows-pointing-out')
                                                             ->badge()
-                                                            ->color(fn() => $kamar->terisi ? 'danger' : 'success')
-                                                            ->icon(fn() => $kamar->terisi ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle'),
+                                                            ->color('info'),
+
+                                                        // Lantai Kamar - dari model Kamar
+                                                        TextEntry::make('lantai_kamar')
+                                                            ->label('Lantai')
+                                                            ->getStateUsing(fn() => $kamar->lantai ? "Lantai {$kamar->lantai}" : 'Tidak ditentukan')
+                                                            ->icon('heroicon-o-building-office')
+                                                            ->badge(),
+
+                                                        // STATUS KAMAR - dari model KetersediaanKamar
+                                                        TextEntry::make('status_ketersediaan_individual')
+                                                            ->label('Status Ketersediaan')
+                                                            ->getStateUsing(function () use ($ketersediaanKamar) {
+                                                                $status = $ketersediaanKamar->status ?? null;
+
+                                                                return match ($status) {
+                                                                    'kosong' => 'Tersedia',
+                                                                    'terisi' => 'Terisi',
+                                                                    'booked' => 'Dipesan',
+                                                                    default => 'Tidak diketahui',
+                                                                };
+                                                            })
+                                                            ->badge()
+                                                            ->color(function () use ($ketersediaanKamar) {
+                                                                return match ($ketersediaanKamar->status ?? null) {
+                                                                    'kosong' => 'success',
+                                                                    'terisi' => 'danger',
+                                                                    'booked' => 'warning',
+                                                                    default => 'gray',
+                                                                };
+                                                            })
+                                                            ->icon(function () use ($ketersediaanKamar) {
+                                                                return match ($ketersediaanKamar->status ?? null) {
+                                                                    'kosong' => 'heroicon-o-check-circle',
+                                                                    'terisi' => 'heroicon-o-x-circle',
+                                                                    'booked' => 'heroicon-o-clock',
+                                                                    default => 'heroicon-o-question-mark-circle',
+                                                                };
+                                                            }),
                                                     ])
                                                     ->columns(3)
                                                     ->compact();
@@ -589,56 +616,220 @@ class UnitResource extends Resource
                                             ]
                                         ])
                                         ->columnSpanFull(),
+
+                                    // RINGKASAN PER TIPE KAMAR
+                                    Section::make('Ringkasan Tipe Kamar')
+                                        ->schema([
+                                            TextEntry::make('total_kamar_tipe')
+                                                ->label('Total Kamar')
+                                                ->getStateUsing(function () use ($tipeKamar) {
+                                                    $total = $tipeKamar->ketersediaanKamars?->count() ?? 0;
+                                                    return $total . ' kamar';
+                                                })
+                                                ->badge()
+                                                ->color('primary')
+                                                ->icon('heroicon-o-home'),
+
+                                            TextEntry::make('kamar_tersedia_tipe')
+                                                ->label('Tersedia')
+                                                ->getStateUsing(function () use ($tipeKamar) {
+                                                    $tersedia = $tipeKamar->ketersediaanKamars?->where('status', 'kosong')->count() ?? 0;
+                                                    return $tersedia . ' kamar';
+                                                })
+                                                ->badge()
+                                                ->color('success')
+                                                ->icon('heroicon-o-check-circle'),
+
+                                            TextEntry::make('kamar_dipesan_tipe')
+                                                ->label('Dipesan')
+                                                ->getStateUsing(function () use ($tipeKamar) {
+                                                    $dipesan = $tipeKamar->ketersediaanKamars?->where('status', 'booked')->count() ?? 0;
+                                                    return $dipesan . ' kamar';
+                                                })
+                                                ->badge()
+                                                ->color('warning')
+                                                ->icon('heroicon-o-clock'),
+
+                                            TextEntry::make('kamar_terisi_tipe')
+                                                ->label('Terisi')
+                                                ->getStateUsing(function () use ($tipeKamar) {
+                                                    $terisi = $tipeKamar->ketersediaanKamars?->where('status', 'terisi')->count() ?? 0;
+                                                    return $terisi . ' kamar';
+                                                })
+                                                ->badge()
+                                                ->color('danger')
+                                                ->icon('heroicon-o-x-circle'),
+
+                                            TextEntry::make('tingkat_hunian_tipe')
+                                                ->label('Tingkat Hunian')
+                                                ->getStateUsing(function () use ($tipeKamar) {
+                                                    $total = $tipeKamar->ketersediaanKamars?->count() ?? 0;
+                                                    $terisi = $tipeKamar->ketersediaanKamars?->where('status', 'terisi')->count() ?? 0;
+
+                                                    if ($total === 0) return '0%';
+
+                                                    $persentase = round(($terisi / $total) * 100, 1);
+                                                    return "{$persentase}%";
+                                                })
+                                                ->badge()
+                                                ->color(function () use ($tipeKamar) {
+                                                    $total = $tipeKamar->ketersediaanKamars?->count() ?? 0;
+                                                    $terisi = $tipeKamar->ketersediaanKamars?->where('status', 'terisi')->count() ?? 0;
+
+                                                    if ($total === 0) return 'gray';
+
+                                                    $persentase = ($terisi / $total) * 100;
+
+                                                    if ($persentase >= 80) return 'success';
+                                                    if ($persentase >= 50) return 'warning';
+                                                    return 'danger';
+                                                })
+                                                ->icon('heroicon-o-chart-bar'),
+                                        ])
+                                        ->columns(5)
+                                        ->columnSpanFull(),
                                 ])
-                                ->columns(2);
+                                ->columns(1);
                         })->toArray()
                     ),
 
-                // Summary Section
+                // RINGKASAN KOS KESELURUHAN
                 Section::make('Ringkasan Kos')
-                    ->description('Statistik keseluruhan')
+                    ->description('Statistik keseluruhan kos')
                     ->icon('heroicon-o-chart-bar')
                     ->collapsible()
                     ->collapsed()
                     ->schema([
                         TextEntry::make('total_tipe_kamar')
                             ->label('Total Tipe Kamar')
-                            ->getStateUsing(fn(Unit $record) => $record->tipeKamars->count() . ' Tipe')
+                            ->getStateUsing(fn(Unit $record) => $record->tipeKamars->count() . ' tipe')
                             ->badge()
-                            ->color('info'),
+                            ->color('info')
+                            ->icon('heroicon-o-squares-2x2'),
 
-                        TextEntry::make('total_kamar')
+                        TextEntry::make('total_kamar_kos')
                             ->label('Total Kamar')
-                            ->getStateUsing(
-                                fn(Unit $record) =>
-                                $record->tipeKamars->sum(fn($tipe) => $tipe->ketersediaanKamars?->count() ?? 0) . ' Kamar'
-                            )
+                            ->getStateUsing(function (Unit $record) {
+                                $total = 0;
+                                foreach ($record->tipeKamars as $tipe) {
+                                    $total += $tipe->ketersediaanKamars?->count() ?? 0;
+                                }
+                                return $total . ' kamar';
+                            })
                             ->badge()
-                            ->color('primary'),
+                            ->color('primary')
+                            ->icon('heroicon-o-home'),
 
-                        TextEntry::make('kamar_tersedia')
+                        TextEntry::make('kamar_tersedia_kos')
                             ->label('Kamar Tersedia')
-                            ->getStateUsing(
-                                fn(Unit $record) =>
-                                $record->tipeKamars->sum(
-                                    fn($tipe) =>
-                                    $tipe->ketersediaanKamars?->where('terisi', false)->count() ?? 0
-                                ) . ' Kamar'
-                            )
+                            ->getStateUsing(function (Unit $record) {
+                                $tersedia = 0;
+                                foreach ($record->tipeKamars as $tipe) {
+                                    $tersedia += $tipe->ketersediaanKamars?->where('status', 'kosong')->count() ?? 0;
+                                }
+                                return $tersedia . ' kamar';
+                            })
                             ->badge()
-                            ->color('success'),
+                            ->color('success')
+                            ->icon('heroicon-o-check-circle'),
 
-                        TextEntry::make('kamar_terisi')
-                            ->label('Kamar Terisi')
-                            ->getStateUsing(
-                                fn(Unit $record) =>
-                                $record->tipeKamars->sum(
-                                    fn($tipe) =>
-                                    $tipe->ketersediaanKamars?->where('terisi', true)->count() ?? 0
-                                ) . ' Kamar'
-                            )
+                        TextEntry::make('kamar_dipesan_kos')
+                            ->label('Kamar Dipesan')
+                            ->getStateUsing(function (Unit $record) {
+                                $dipesan = 0;
+                                foreach ($record->tipeKamars as $tipe) {
+                                    $dipesan += $tipe->ketersediaanKamars?->where('status', 'booked')->count() ?? 0;
+                                }
+                                return $dipesan . ' kamar';
+                            })
                             ->badge()
-                            ->color('danger'),
+                            ->color('warning')
+                            ->icon('heroicon-o-clock'),
+
+                        TextEntry::make('kamar_terisi_kos')
+                            ->label('Kamar Terisi')
+                            ->getStateUsing(function (Unit $record) {
+                                $terisi = 0;
+                                foreach ($record->tipeKamars as $tipe) {
+                                    $terisi += $tipe->ketersediaanKamars?->where('status', 'terisi')->count() ?? 0;
+                                }
+                                return $terisi . ' kamar';
+                            })
+                            ->badge()
+                            ->color('danger')
+                            ->icon('heroicon-o-x-circle'),
+
+                        TextEntry::make('tingkat_hunian_kos')
+                            ->label('Tingkat Hunian')
+                            ->getStateUsing(function (Unit $record) {
+                                $total = 0;
+                                $terisi = 0;
+
+                                foreach ($record->tipeKamars as $tipe) {
+                                    $total += $tipe->ketersediaanKamars?->count() ?? 0;
+                                    $terisi += $tipe->ketersediaanKamars?->where('status', 'terisi')->count() ?? 0;
+                                }
+
+                                if ($total === 0) return '0%';
+
+                                $persentase = round(($terisi / $total) * 100, 1);
+                                return "{$persentase}%";
+                            })
+                            ->badge()
+                            ->color(function (Unit $record) {
+                                $total = 0;
+                                $terisi = 0;
+
+                                foreach ($record->tipeKamars as $tipe) {
+                                    $total += $tipe->ketersediaanKamars?->count() ?? 0;
+                                    $terisi += $tipe->ketersediaanKamars?->where('status', 'terisi')->count() ?? 0;
+                                }
+
+                                if ($total === 0) return 'gray';
+
+                                $persentase = ($terisi / $total) * 100;
+
+                                if ($persentase >= 80) return 'success';
+                                if ($persentase >= 50) return 'warning';
+                                return 'danger';
+                            })
+                            ->icon('heroicon-o-chart-bar'),
+
+                        TextEntry::make('tingkat_ketersediaan_kos')
+                            ->label('Tingkat Ketersediaan')
+                            ->getStateUsing(function (Unit $record) {
+                                $total = 0;
+                                $tersedia = 0;
+
+                                foreach ($record->tipeKamars as $tipe) {
+                                    $total += $tipe->ketersediaanKamars?->count() ?? 0;
+                                    $tersedia += $tipe->ketersediaanKamars?->where('status', 'kosong')->count() ?? 0;
+                                }
+
+                                if ($total === 0) return '0%';
+
+                                $persentase = round(($tersedia / $total) * 100, 1);
+                                return "{$persentase}%";
+                            })
+                            ->badge()
+                            ->color(function (Unit $record) {
+                                $total = 0;
+                                $tersedia = 0;
+
+                                foreach ($record->tipeKamars as $tipe) {
+                                    $total += $tipe->ketersediaanKamars?->count() ?? 0;
+                                    $tersedia += $tipe->ketersediaanKamars?->where('status', 'kosong')->count() ?? 0;
+                                }
+
+                                if ($total === 0) return 'gray';
+
+                                $persentase = ($tersedia / $total) * 100;
+
+                                if ($persentase >= 50) return 'success';
+                                if ($persentase >= 20) return 'warning';
+                                return 'danger';
+                            })
+                            ->icon('heroicon-o-home-modern'),
                     ])
                     ->columns(4),
             ]);
