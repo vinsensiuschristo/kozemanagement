@@ -80,109 +80,6 @@ class CreateUnit extends CreateRecord
             }
         }
 
-        // Simpan Tipe Kamar
-        // $tipeKamars = [];
-        // if ($data['multi_tipe']) {
-        //     foreach ($data['tipe_kamars'] as $tipeData) {
-        //         $tipe = $record->tipeKamars()->create([
-        //             'nama_tipe' => $tipeData['nama_tipe'],
-        //         ]);
-        //         $tipeKamars[$tipe->id] = $tipe;
-        //     }
-        // } else {
-        //     $tipe = $record->tipeKamars()->create([
-        //         'nama_tipe' => $data['nama_tipe'] ?? 'Tipe Default',
-        //     ]);
-        //     $tipeKamars[$tipe->id] = $tipe;
-        // }
-
-        // // Simpan Fasilitas tiap Tipe Kamar
-        // foreach ($this->fasilitasKamarsData ?? [] as $item) {
-        //     $tipeId = $item['tipe_kamar_id'] ?? null;
-        //     if ($tipeId && isset($tipeKamars[$tipeId])) {
-        //         $tipeModel = $tipeKamars[$tipeId];
-        //         $allFasilitas = array_merge(
-        //             $item['fasilitas_umum'] ?? [],
-        //             $item['fasilitas_kamar'] ?? [],
-        //             $item['fasilitas_kamar_mandi'] ?? [],
-        //             $item['fasilitas_parkir'] ?? [],
-        //         );
-        //         $tipeModel->fasilitas()->sync($allFasilitas);
-        //     }
-        // }
-
-        // // Simpan Harga Kamar
-        // foreach ($data['harga_kamars'] ?? [] as $harga) {
-        //     $tipeIndex = $harga['tipe_kamar_id'];
-        //     $tipeModel = $tipeKamars[$tipeIndex] ?? null;
-        //     if ($tipeModel) {
-        //         $tipeModel->hargaKamars()->create([
-        //             'harga_perbulan' => $harga['harga_perbulan'],
-        //             'minimal_deposit' => $harga['minimal_deposit'] ?? null,
-        //         ]);
-        //     }
-        // }
-
-        // // Simpan Ketersediaan Kamar
-        // foreach ($this->kamarsData ?? [] as $kamarData) {
-        //     $tipeIndex = $kamarData['tipe_kamar_id'] ?? null;
-        //     $tipeModel = $tipeKamars[$tipeIndex] ?? null;
-        //     if ($tipeModel) {
-        //         $tipeModel->ketersediaanKamars()->create([
-        //             'nama' => $kamarData['nama'],
-        //             'lantai' => $kamarData['lantai'] ?? null,
-        //             'ukuran' => $kamarData['ukuran'] ?? null,
-        //             'terisi' => $kamarData['terisi'] ?? false,
-        //             'unit_id' => $record->id,
-        //         ]);
-        //     }
-        // }
-        // Simpan tipe kamar dan relasi lainnya
-
-
-        // if (!empty($data['tipe_kamars'])) {
-        //     foreach ($data['tipe_kamars'] as $tipeKamarData) {
-        //         $tipeKamar = $record->tipeKamars()->create([
-        //             'nama_tipe' => $tipeKamarData['nama_tipe'],
-        //         ]);
-
-        //         // Simpan fasilitas per tipe kamar
-        //         foreach ($this->fasilitasKamarsData as $fasilitasPerTipe) {
-        //             if ($fasilitasPerTipe['tipe_kamar_id'] == $tipeKamarData['id']) { // bandingkan dengan id dari data input
-        //                 $allFasilitas = array_merge(
-        //                     $fasilitasPerTipe['fasilitas_umum'] ?? [],
-        //                     $fasilitasPerTipe['fasilitas_kamar'] ?? [],
-        //                     $fasilitasPerTipe['fasilitas_kamar_mandi'] ?? [],
-        //                     $fasilitasPerTipe['fasilitas_parkir'] ?? [],
-        //                 );
-        //                 $tipeKamar->fasilitas()->sync($allFasilitas);
-        //             }
-        //         }
-
-        //         // Simpan harga kamar
-        //         foreach ($data['harga_kamars'] ?? [] as $hargaKamar) {
-        //             if ($hargaKamar['tipe_kamar_id'] == $tipeKamarData['id']) {
-        //                 $tipeKamar->hargaKamars()->create([
-        //                     'harga_perbulan' => $hargaKamar['harga_perbulan'],
-        //                     'minimal_deposit' => $hargaKamar['minimal_deposit'] ?? 0,
-        //                 ]);
-        //             }
-        //         }
-
-        //         // Simpan ketersediaan kamar
-        //         foreach ($this->kamarsData ?? [] as $kamarData) {
-        //             if ($kamarData['tipe_kamar_id'] == $tipeKamarData['id']) {
-        //                 $tipeKamar->kamars()->create([
-        //                     'nama' => $kamarData['nama'],
-        //                     'lantai' => $kamarData['lantai'] ?? null,
-        //                     'ukuran' => $kamarData['ukuran'] ?? null,
-        //                     'terisi' => $kamarData['terisi'] ?? false,
-        //                 ]);
-        //             }
-        //         }
-        //     }
-        // }
-
         // Simpan tipe kamar dan buat mapping index ke UUID
         $tipeKamarMap = []; // index => UUID tipe kamar
         if (!empty($data['tipe_kamars'])) {
@@ -205,6 +102,12 @@ class CreateUnit extends CreateRecord
                     }
                 }
             }
+        } else if (!empty($data['nama_tipe_single'])) {
+            // Single type
+            $tipeKamar = $record->tipeKamars()->create([
+                'nama_tipe' => $data['nama_tipe_single'],
+            ]);
+            $tipeKamarMap[0] = $tipeKamar->id;
         }
 
         // Simpan harga kamar
@@ -219,21 +122,20 @@ class CreateUnit extends CreateRecord
                             'harga_perbulan' => $hargaData['harga_bulanan'],
                             'harga_mingguan' => $hargaData['harga_mingguan'] ?? null,
                             'harga_harian' => $hargaData['harga_harian'] ?? null,
-                            'minimal_deposit' => 0, // jika ada dari form, bisa ditambahkan di sini
+                            'minimal_deposit' => $hargaData['minimal_deposit'] ?? 0,
                         ]);
                     }
                 }
             }
         } else if (!empty($data['harga_bulanan'])) {
             // Jika multi_tipe = false, simpan harga langsung ke tipe kamar default
-            // Asumsi ada tipe kamar default 1
             $tipeKamar = $record->tipeKamars()->first();
             if ($tipeKamar) {
                 $tipeKamar->hargaKamars()->create([
                     'harga_perbulan' => $data['harga_bulanan'],
                     'harga_mingguan' => $data['harga_mingguan'] ?? null,
                     'harga_harian' => $data['harga_harian'] ?? null,
-                    'minimal_deposit' => 0,
+                    'minimal_deposit' => $data['minimal_deposit'] ?? 0,
                 ]);
             }
         }
@@ -260,5 +162,8 @@ class CreateUnit extends CreateRecord
                 }
             }
         }
+
+        // REDIRECT KE INDEX SETELAH CREATE
+        $this->redirect(static::getResource()::getUrl('index'));
     }
 }

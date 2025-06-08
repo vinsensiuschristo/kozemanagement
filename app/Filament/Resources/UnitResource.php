@@ -18,6 +18,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Hidden;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
 use Filament\Tables;
@@ -29,7 +30,6 @@ use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Card;
 
-
 use function Pest\Laravel\options;
 use Filament\Forms\Get;
 use Filament\Infolists\Components\Fieldset;
@@ -37,9 +37,6 @@ use Filament\Forms\Set;
 use Closure;
 use function Filament\Forms\getLivewire;
 use Illuminate\Support\Str;
-
-
-
 
 class UnitResource extends Resource
 {
@@ -50,8 +47,6 @@ class UnitResource extends Resource
     protected array $fasilitasTerpilih = [];
     protected array $fasilitasKamarsData = [];
 
-
-
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -60,7 +55,7 @@ class UnitResource extends Resource
                 Step::make('Data Kos')->schema([
                     Select::make('id_owner')
                         ->label('Pemilik Kos')
-                        ->relationship('owner', 'nama') // Asumsikan relasi Unit → Owner sudah diset dengan relasi owner()
+                        ->relationship('owner', 'nama')
                         ->required(),
 
                     TextInput::make('nama_cluster')
@@ -69,7 +64,13 @@ class UnitResource extends Resource
 
                     Toggle::make('multi_tipe')
                         ->label('Kos Memiliki Banyak Tipe Kamar?')
-                        ->reactive(),
+                        ->reactive()
+                        ->default(false)
+                        ->afterStateHydrated(function (Toggle $component, $state, $record) {
+                            if ($record) {
+                                $component->state((bool) $record->multi_tipe);
+                            }
+                        }),
 
                     Select::make('disewakan_untuk')
                         ->label('Disewakan Untuk')
@@ -92,13 +93,23 @@ class UnitResource extends Resource
                 Step::make('Alamat Kos')->schema([
                     Textarea::make('alamatUnit.alamat')
                         ->label('Alamat')
-                        ->required(),
+                        ->required()
+                        ->afterStateHydrated(function (Textarea $component, $state, $record) {
+                            if ($record && $record->alamat) {
+                                $component->state($record->alamat->alamat ?? '');
+                            }
+                        }),
 
                     Select::make('alamatUnit.provinsi')
                         ->label('Provinsi')
                         ->options(self::getProvinces())
                         ->required()
                         ->reactive()
+                        ->afterStateHydrated(function (Select $component, $state, $record) {
+                            if ($record && $record->alamat) {
+                                $component->state($record->alamat->provinsi ?? '');
+                            }
+                        })
                         ->afterStateUpdated(function (Set $set) {
                             $set('alamatUnit.kabupaten', null);
                             $set('alamatUnit.kecamatan', null);
@@ -112,6 +123,11 @@ class UnitResource extends Resource
                             $provinsi = $get('alamatUnit.provinsi');
                             return self::getCitiesByProvince()[$provinsi] ?? [];
                         })
+                        ->afterStateHydrated(function (Select $component, $state, $record) {
+                            if ($record && $record->alamat) {
+                                $component->state($record->alamat->kabupaten ?? '');
+                            }
+                        })
                         ->afterStateUpdated(function (Set $set) {
                             $set('alamatUnit.kecamatan', null);
                         }),
@@ -122,11 +138,21 @@ class UnitResource extends Resource
                         ->options(function (callable $get) {
                             $kabupaten = $get('alamatUnit.kabupaten');
                             return self::getKecamatansByCity()[$kabupaten] ?? [];
+                        })
+                        ->afterStateHydrated(function (Select $component, $state, $record) {
+                            if ($record && $record->alamat) {
+                                $component->state($record->alamat->kecamatan ?? '');
+                            }
                         }),
 
                     Textarea::make('alamatUnit.deskripsi')
                         ->label('Deskripsi Tambahan')
-                        ->nullable(),
+                        ->nullable()
+                        ->afterStateHydrated(function (Textarea $component, $state, $record) {
+                            if ($record && $record->alamat) {
+                                $component->state($record->alamat->deskripsi ?? '');
+                            }
+                        }),
                 ]),
 
                 // STEP 3: DATA KONTRAK
@@ -147,22 +173,79 @@ class UnitResource extends Resource
                             ->afterOrEqual('tanggal_awal_kontrak'),
                     ]),
 
-
-                // STEP 3: FOTO KOS
+                // STEP 4: FOTO KOS - DIPERBAIKI UNTUK EDIT
                 Step::make('Foto Kos')->schema([
-                    FileUpload::make('foto_kos_depan')->label('Foto Tampak Depan')->multiple()->directory('foto_kos/depan')->reorderable(),
-                    FileUpload::make('foto_kos_dalam')->label('Foto Dalam Kos')->multiple()->directory('foto_kos/dalam')->reorderable(),
-                    FileUpload::make('foto_kos_jalan')->label('Foto Tampak Dari Jalan')->multiple()->directory('foto_kos/jalan')->reorderable(),
+                    FileUpload::make('foto_kos_depan')
+                        ->label('Foto Tampak Depan')
+                        ->multiple()
+                        ->directory('foto_kos/depan')
+                        ->reorderable()
+                        ->image()
+                        ->imageEditor()
+                        ->afterStateHydrated(function (FileUpload $component, $state, $record) {
+                            if ($record && $record->fotoUnit) {
+                                $files = $record->fotoUnit
+                                    ->where('kategori', 'depan')
+                                    ->pluck('path')
+                                    ->filter() // Remove empty values
+                                    ->toArray();
+
+                                if (!empty($files)) {
+                                    $component->state($files);
+                                }
+                            }
+                        }),
+
+                    FileUpload::make('foto_kos_dalam')
+                        ->label('Foto Dalam Kos')
+                        ->multiple()
+                        ->directory('foto_kos/dalam')
+                        ->reorderable()
+                        ->image()
+                        ->imageEditor()
+                        ->afterStateHydrated(function (FileUpload $component, $state, $record) {
+                            if ($record && $record->fotoUnit) {
+                                $files = $record->fotoUnit
+                                    ->where('kategori', 'dalam')
+                                    ->pluck('path')
+                                    ->filter() // Remove empty values
+                                    ->toArray();
+
+                                if (!empty($files)) {
+                                    $component->state($files);
+                                }
+                            }
+                        }),
+
+                    FileUpload::make('foto_kos_jalan')
+                        ->label('Foto Tampak Dari Jalan')
+                        ->multiple()
+                        ->directory('foto_kos/jalan')
+                        ->reorderable()
+                        ->image()
+                        ->imageEditor()
+                        ->afterStateHydrated(function (FileUpload $component, $state, $record) {
+                            if ($record && $record->fotoUnit) {
+                                $files = $record->fotoUnit
+                                    ->where('kategori', 'jalan')
+                                    ->pluck('path')
+                                    ->filter() // Remove empty values
+                                    ->toArray();
+
+                                if (!empty($files)) {
+                                    $component->state($files);
+                                }
+                            }
+                        }),
                 ]),
 
-                // STEP 4: TIPE KAMAR
+                // STEP 5: TIPE KAMAR - DIPERBAIKI VISIBILITY
                 Step::make('Tipe Kamar')
                     ->schema([
                         Repeater::make('tipe_kamars')
                             ->label('Daftar Tipe Kamar')
                             ->schema([
-                                TextInput::make('id') // UUID disimpan secara eksplisit
-                                    ->hidden()
+                                Hidden::make('id')
                                     ->default(fn() => (string) Str::uuid()),
 
                                 TextInput::make('nama_tipe')
@@ -171,35 +254,70 @@ class UnitResource extends Resource
 
                                 TextInput::make('ukuran')
                                     ->label('Ukuran')
-                                    ->required(),
+                                    ->nullable(),
                             ])
                             ->defaultItems(1)
                             ->minItems(1)
                             ->createItemButtonLabel('Tambah Tipe Kamar')
-                            ->visible(fn(Get $get) => $get('multi_tipe') === true)
-                            ->reactive(),
+                            ->visible(function (Get $get, $record) {
+                                // Untuk edit, cek dari record dulu, baru dari form
+                                if ($record) {
+                                    return (bool) $record->multi_tipe;
+                                }
+                                return $get('multi_tipe') === true;
+                            })
+                            ->reactive()
+                            ->afterStateHydrated(function (Repeater $component, $state, $record) {
+                                if ($record && $record->tipeKamars && $record->tipeKamars->isNotEmpty()) {
+                                    $tipeKamars = $record->tipeKamars->map(function ($tipe, $index) {
+                                        return [
+                                            'id' => (string) Str::uuid(),
+                                            'nama_tipe' => $tipe->nama_tipe ?? '',
+                                            'ukuran' => $tipe->ukuran ?? '',
+                                        ];
+                                    })->toArray();
+                                    $component->state($tipeKamars);
+                                }
+                            }),
 
-                        TextInput::make('nama_tipe')
+                        TextInput::make('nama_tipe_single')
                             ->label('Nama Tipe Kamar')
                             ->required()
-                            ->visible(fn(Get $get) => $get('multi_tipe') === false)
-                            ->default('Tipe Kos Umum'),
+                            ->visible(function (Get $get, $record) {
+                                // Untuk edit, cek dari record dulu, baru dari form
+                                if ($record) {
+                                    return !(bool) $record->multi_tipe;
+                                }
+                                return $get('multi_tipe') === false;
+                            })
+                            ->default('Tipe Kos Umum')
+                            ->afterStateHydrated(function (TextInput $component, $state, $record) {
+                                if ($record && $record->tipeKamars && $record->tipeKamars->isNotEmpty() && !$record->multi_tipe) {
+                                    $component->state($record->tipeKamars->first()->nama_tipe ?? 'Tipe Kos Umum');
+                                }
+                            }),
                     ]),
 
-                // v2 
+                // STEP 6: FASILITAS KAMAR - DIPERBAIKI VISIBILITY
                 Step::make('Fasilitas Kamar')
                     ->schema([
                         // Jika multi_tipe
                         Repeater::make('fasilitas_per_tipe')
                             ->label('Fasilitas per Tipe Kamar')
-                            ->visible(fn($livewire) => $livewire->data['multi_tipe'] ?? false)
+                            ->visible(function (Get $get, $record) {
+                                // Untuk edit, cek dari record dulu, baru dari form
+                                if ($record) {
+                                    return (bool) $record->multi_tipe;
+                                }
+                                return $get('multi_tipe') === true;
+                            })
                             ->schema([
                                 Select::make('tipe_kamar_id')
                                     ->label('Tipe Kamar')
                                     ->required()
-                                    ->options(function ($livewire) {
-                                        return collect($livewire->data['tipe_kamars'] ?? [])
-                                            ->mapWithKeys(fn($tipe) => [$tipe['id'] => $tipe['nama_tipe'] ?? 'Tipe'])
+                                    ->options(function (Get $get) {
+                                        return collect($get('../../tipe_kamars') ?? [])
+                                            ->mapWithKeys(fn($tipe) => [$tipe['id'] ?? '' => $tipe['nama_tipe'] ?? 'Tipe'])
                                             ->toArray();
                                     }),
 
@@ -224,58 +342,68 @@ class UnitResource extends Resource
                                     ->columns(2),
                             ])
                             ->columns(1)
-                            ->default(function ($livewire) {
-                                return collect($livewire->data['tipe_kamars'] ?? [])
-                                    ->map(function ($tipe) {
-                                        return [
-                                            'tipe_kamar_id' => $tipe['id'] ?? null,
-                                            'fasilitas_umum' => [],
-                                            'fasilitas_kamar' => [],
-                                            'fasilitas_kamar_mandi' => [],
-                                            'fasilitas_parkir' => [],
+                            ->afterStateHydrated(function (Repeater $component, $state, $record) {
+                                if ($record && $record->multi_tipe && $record->tipeKamars && $record->tipeKamars->isNotEmpty()) {
+                                    $fasilitasPerTipe = [];
+
+                                    foreach ($record->tipeKamars as $tipe) {
+                                        $fasilitas = $tipe->fasilitas ? $tipe->fasilitas->groupBy('tipe') : collect();
+                                        $fasilitasPerTipe[] = [
+                                            'tipe_kamar_id' => (string) Str::uuid(),
+                                            'fasilitas_umum' => $fasilitas->get('umum', collect())->pluck('id')->toArray(),
+                                            'fasilitas_kamar' => $fasilitas->get('kamar', collect())->pluck('id')->toArray(),
+                                            'fasilitas_kamar_mandi' => $fasilitas->get('kamar_mandi', collect())->pluck('id')->toArray(),
+                                            'fasilitas_parkir' => $fasilitas->get('parkir', collect())->pluck('id')->toArray(),
                                         ];
-                                    })
-                                    ->toArray();
+                                    }
+
+                                    if (!empty($fasilitasPerTipe)) {
+                                        $component->state($fasilitasPerTipe);
+                                    }
+                                }
                             }),
 
-                        // Jika bukan multi_tipe
+                        // Jika bukan multi_tipe - DIPERBAIKI VISIBILITY
                         Group::make()
-                            ->visible(fn($livewire) => !($livewire->data['multi_tipe'] ?? false))
+                            ->visible(function (Get $get, $record) {
+                                // Untuk edit, cek dari record dulu, baru dari form
+                                if ($record) {
+                                    return !(bool) $record->multi_tipe;
+                                }
+                                return $get('multi_tipe') === false;
+                            })
                             ->schema([
-                                CheckboxList::make('fasilitas_umum')
-                                    ->label('Fasilitas Umum')
-                                    ->options(Fasilitas::where('tipe', 'umum')->pluck('nama', 'id'))
-                                    ->columns(2),
-
-                                CheckboxList::make('fasilitas_kamar')
-                                    ->label('Fasilitas Kamar')
-                                    ->options(Fasilitas::where('tipe', 'kamar')->pluck('nama', 'id'))
-                                    ->columns(2),
-
-                                CheckboxList::make('fasilitas_kamar_mandi')
-                                    ->label('Fasilitas Kamar Mandi')
-                                    ->options(Fasilitas::where('tipe', 'kamar_mandi')->pluck('nama', 'id'))
-                                    ->columns(2),
-
-                                CheckboxList::make('fasilitas_parkir')
-                                    ->label('Fasilitas Parkir')
-                                    ->options(Fasilitas::where('tipe', 'parkir')->pluck('nama', 'id'))
-                                    ->columns(2),
+                                CheckboxList::make('fasilitas_terpilih')
+                                    ->label('Fasilitas Kos')
+                                    ->options(Fasilitas::pluck('nama', 'id'))
+                                    ->columns(2)
+                                    ->afterStateHydrated(function (CheckboxList $component, $state, $record) {
+                                        if ($record && $record->fasilitasUnit && $record->fasilitasUnit->isNotEmpty()) {
+                                            $fasilitas = $record->fasilitasUnit->pluck('fasilitas_id')->toArray();
+                                            $component->state($fasilitas);
+                                        }
+                                    }),
                             ]),
                     ]),
 
-                // STEP 6: HARGA KAMAR
+                // STEP 7: HARGA KAMAR - DIPERBAIKI VISIBILITY
                 Step::make('Harga Kamar')
                     ->schema([
                         Repeater::make('harga_per_tipe')
                             ->label('Harga per Tipe Kamar')
-                            ->visible(fn($livewire) => $livewire->data['multi_tipe'] ?? false)
+                            ->visible(function (Get $get, $record) {
+                                // Untuk edit, cek dari record dulu, baru dari form
+                                if ($record) {
+                                    return (bool) $record->multi_tipe;
+                                }
+                                return $get('multi_tipe') === true;
+                            })
                             ->schema([
                                 Select::make('tipe_kamar_index')
                                     ->label('Tipe Kamar')
                                     ->required()
-                                    ->options(function ($livewire) {
-                                        return collect($livewire->data['tipe_kamars'] ?? [])
+                                    ->options(function (Get $get) {
+                                        return collect($get('../../tipe_kamars') ?? [])
                                             ->mapWithKeys(fn($tipe, $index) => [$index => $tipe['nama_tipe'] ?? "Tipe #$index"])
                                             ->toArray();
                                     }),
@@ -294,68 +422,151 @@ class UnitResource extends Resource
                                     ->label('Harga Harian (Rp)')
                                     ->numeric()
                                     ->nullable(),
+
+                                TextInput::make('minimal_deposit')
+                                    ->label('Minimal Deposit (Rp)')
+                                    ->numeric()
+                                    ->nullable(),
                             ])
-                            ->default(function ($livewire) {
-                                return collect($livewire->data['tipe_kamars'] ?? [])
-                                    ->map(function ($tipe, $index) {
+                            ->afterStateHydrated(function (Repeater $component, $state, $record) {
+                                if ($record && $record->multi_tipe && $record->tipeKamars && $record->tipeKamars->isNotEmpty()) {
+                                    $hargaPerTipe = $record->tipeKamars->map(function ($tipe, $index) {
                                         return [
                                             'tipe_kamar_index' => $index,
-                                            'harga_bulanan' => null,
-                                            'harga_mingguan' => null,
-                                            'harga_harian' => null,
+                                            'harga_bulanan' => $tipe->hargaKamars?->harga_perbulan ?? 0,
+                                            'harga_mingguan' => $tipe->hargaKamars?->harga_mingguan ?? 0,
+                                            'harga_harian' => $tipe->hargaKamars?->harga_harian ?? 0,
+                                            'minimal_deposit' => $tipe->hargaKamars?->minimal_deposit ?? 0,
                                         ];
-                                    })
-                                    ->toArray();
+                                    })->toArray();
+                                    $component->state($hargaPerTipe);
+                                }
                             }),
 
                         Group::make()
-                            ->visible(fn($livewire) => !($livewire->data['multi_tipe'] ?? false))
+                            ->visible(function (Get $get, $record) {
+                                // Untuk edit, cek dari record dulu, baru dari form
+                                if ($record) {
+                                    return !(bool) $record->multi_tipe;
+                                }
+                                return $get('multi_tipe') === false;
+                            })
                             ->schema([
                                 TextInput::make('harga_bulanan')
                                     ->label('Harga Bulanan (Rp)')
                                     ->numeric()
-                                    ->required(),
+                                    ->required()
+                                    ->afterStateHydrated(function (TextInput $component, $state, $record) {
+                                        if ($record && !$record->multi_tipe && $record->tipeKamars && $record->tipeKamars->isNotEmpty()) {
+                                            $component->state($record->tipeKamars->first()->hargaKamars?->harga_perbulan ?? 0);
+                                        }
+                                    }),
 
                                 TextInput::make('harga_mingguan')
                                     ->label('Harga Mingguan (Rp)')
                                     ->numeric()
-                                    ->nullable(),
+                                    ->nullable()
+                                    ->afterStateHydrated(function (TextInput $component, $state, $record) {
+                                        if ($record && !$record->multi_tipe && $record->tipeKamars && $record->tipeKamars->isNotEmpty()) {
+                                            $component->state($record->tipeKamars->first()->hargaKamars?->harga_mingguan ?? 0);
+                                        }
+                                    }),
 
                                 TextInput::make('harga_harian')
                                     ->label('Harga Harian (Rp)')
                                     ->numeric()
-                                    ->nullable(),
+                                    ->nullable()
+                                    ->afterStateHydrated(function (TextInput $component, $state, $record) {
+                                        if ($record && !$record->multi_tipe && $record->tipeKamars && $record->tipeKamars->isNotEmpty()) {
+                                            $component->state($record->tipeKamars->first()->hargaKamars?->harga_harian ?? 0);
+                                        }
+                                    }),
+
+                                TextInput::make('minimal_deposit')
+                                    ->label('Minimal Deposit (Rp)')
+                                    ->numeric()
+                                    ->nullable()
+                                    ->afterStateHydrated(function (TextInput $component, $state, $record) {
+                                        if ($record && !$record->multi_tipe && $record->tipeKamars && $record->tipeKamars->isNotEmpty()) {
+                                            $component->state($record->tipeKamars->first()->hargaKamars?->minimal_deposit ?? 0);
+                                        }
+                                    }),
                             ]),
                     ]),
 
-
-                // STEP 7: KETERSEDIAAN KAMAR
+                // STEP 8: KETERSEDIAAN KAMAR - DIPERBAIKI VISIBILITY
                 Step::make('Ketersediaan Kamar')
                     ->schema([
                         Repeater::make('kamars')
                             ->label('Kamar')
                             ->schema([
-                                Select::make('tipe_kamar_index') // ganti jadi index, nanti akan di-map di afterCreate
+                                Select::make('tipe_kamar_index')
                                     ->label('Tipe Kamar')
                                     ->required()
-                                    ->options(
-                                        fn($livewire) => collect($livewire->data['tipe_kamars'] ?? [])
-                                            ->mapWithKeys(fn($tipe, $index) => [$index => $tipe['nama_tipe'] ?? "Tipe #$index"])
-                                    ),
-                                TextInput::make('nama')->label('Nama / Nomor Kamar')->required(),
-                                TextInput::make('lantai')->label('Lantai')->numeric()->nullable(),
-                                TextInput::make('ukuran')->label('Ukuran Kamar')->nullable(),
-                                Toggle::make('terisi')->label('Status Terisi')->default(false),
+                                    ->options(function (Get $get, $record) {
+                                        // Untuk edit, cek dari record dulu
+                                        if ($record && $record->multi_tipe) {
+                                            return collect($get('../../tipe_kamars') ?? [])
+                                                ->mapWithKeys(fn($tipe, $index) => [$index => $tipe['nama_tipe'] ?? "Tipe #$index"]);
+                                        } else if ($record && !$record->multi_tipe) {
+                                            return [0 => $get('../../nama_tipe_single') ?? 'Tipe Default'];
+                                        } else if ($get('../../multi_tipe') === true) {
+                                            return collect($get('../../tipe_kamars') ?? [])
+                                                ->mapWithKeys(fn($tipe, $index) => [$index => $tipe['nama_tipe'] ?? "Tipe #$index"]);
+                                        } else {
+                                            return [0 => $get('../../nama_tipe_single') ?? 'Tipe Default'];
+                                        }
+                                    }),
+
+                                TextInput::make('nama')
+                                    ->label('Nama / Nomor Kamar')
+                                    ->required(),
+
+                                TextInput::make('lantai')
+                                    ->label('Lantai')
+                                    ->numeric()
+                                    ->nullable(),
+
+                                TextInput::make('ukuran')
+                                    ->label('Ukuran Kamar')
+                                    ->nullable(),
+
+                                Toggle::make('terisi')
+                                    ->label('Kamar Terisi?')
+                                    ->default(false),
                             ])
                             ->columns(2)
                             ->minItems(1)
                             ->defaultItems(1)
-                            ->createItemButtonLabel('Tambah Kamar'),
+                            ->createItemButtonLabel('Tambah Kamar')
+                            ->afterStateHydrated(function (Repeater $component, $state, $record) {
+                                if ($record && $record->kamars && $record->kamars->isNotEmpty()) {
+                                    $kamars = $record->kamars->map(function ($kamar, $index) use ($record) {
+                                        $tipeKamarIndex = 0;
+                                        if ($record->tipeKamars && $record->tipeKamars->isNotEmpty()) {
+                                            $tipeKamarIndex = $record->tipeKamars->search(function ($tipe) use ($kamar) {
+                                                return $tipe->id === $kamar->tipe_kamar_id;
+                                            });
+                                            $tipeKamarIndex = $tipeKamarIndex !== false ? $tipeKamarIndex : 0;
+                                        }
+
+                                        return [
+                                            'tipe_kamar_index' => $tipeKamarIndex,
+                                            'nama' => $kamar->nama ?? '',
+                                            'lantai' => $kamar->lantai,
+                                            'ukuran' => $kamar->ukuran ?? '',
+                                            'terisi' => $kamar->ketersediaanKamar?->status === 'terisi',
+                                        ];
+                                    })->toArray();
+                                    $component->state($kamars);
+                                }
+                            }),
                     ]),
             ])->columnSpanFull(),
         ]);
     }
 
+    // Sisanya tetap sama seperti infolist, table, dll...
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist
@@ -881,7 +1092,6 @@ class UnitResource extends Resource
         ];
     }
 
-
     protected static function getCitiesByProvince(): array
     {
         return [
@@ -899,7 +1109,6 @@ class UnitResource extends Resource
             ],
         ];
     }
-
 
     protected static function getKecamatansByCity(): array
     {
