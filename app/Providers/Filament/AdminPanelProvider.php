@@ -31,7 +31,10 @@ class AdminPanelProvider extends PanelProvider
             ->login()
 
             // tambahan
-            // ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
+            ->when(
+                auth()->check() && auth()->user()->hasRole('Superadmin'),
+                fn($panel) => $panel->plugin(FilamentSpatieRolesPermissionsPlugin::make())
+            )
             ->sidebarCollapsibleOnDesktop(true)
             // ->brand(view('components.filament.brand'))
             ->brandName('Koze Management')

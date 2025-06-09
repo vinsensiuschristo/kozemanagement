@@ -35,6 +35,9 @@ use Filament\Forms\Get;
 use Filament\Infolists\Components\Fieldset;
 use Filament\Forms\Set;
 use Closure;
+use Filament\Facades\Filament;
+use Illuminate\Database\Eloquent\Builder;
+
 use function Filament\Forms\getLivewire;
 use Illuminate\Support\Str;
 
@@ -46,6 +49,25 @@ class UnitResource extends Resource
 
     protected array $fasilitasTerpilih = [];
     protected array $fasilitasKamarsData = [];
+
+    public static function canCreate(): bool
+    {
+        $user = Filament::auth()->user();
+        return $user->hasAnyRole(['Superadmin', 'Admin']);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with([
+                'owner.user',
+                'alamat',
+                'kamars.ketersediaan'
+            ])
+            ->when(auth()->user()->hasRole('Owner'), fn($q) => $q->where('id_owner', auth()->id()));
+    }
+
+
 
     public static function form(Form $form): Form
     {
@@ -1050,24 +1072,90 @@ class UnitResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('nama_cluster')->label('Nama Kos'),
-                Tables\Columns\BadgeColumn::make('disewakan_untuk')->colors([
-                    'primary' => 'putra',
-                    'warning' => 'putri',
-                    'success' => 'campur',
-                ]),
-                Tables\Columns\IconColumn::make('multi_tipe')->boolean(),
-                Tables\Columns\TextColumn::make('tahun_dibangun'),
+                Tables\Columns\TextColumn::make('nama_cluster')
+                    ->label('Nama Kos')
+                    ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('owner.user.name')
+                    ->label('Pemilik')
+                    ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('alamat.kecamatan')
+                    ->label('Kecamatan')
+                    ->searchable(),
+
+                Tables\Columns\BadgeColumn::make('status_kamar')
+                    ->label('Kamar Terisi')
+                    ->getStateUsing(function ($record) {
+                        $total = $record->kamars->count();
+                        $terisi = $record->kamars->filter(
+                            fn($kamar) =>
+                            $kamar->ketersediaan && $kamar->ketersediaan->status === 'terisi'
+                        )->count();
+
+                        if ($total === 0) return '0 / 0';
+
+                        return "{$terisi} / {$total}";
+                    })
+                    ->colors([
+                        'success' => fn($state) => Str::startsWith($state, '0 /'),
+                        'warning' => fn($state) => !Str::startsWith($state, '0 /') && !Str::contains($state, '/ 0') && explode(' / ', $state)[0] < explode(' / ', $state)[1],
+                        'danger'  => fn($state) => explode(' / ', $state)[0] == explode(' / ', $state)[1] && explode(' / ', $state)[1] > 0,
+                    ]),
+
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('status_kamar')
+                    ->label('Status Kamar')
+                    ->options([
+                        'kosong' => 'Kosong semua',
+                        'sebagian' => 'Sebagian Terisi',
+                        'penuh' => 'Penuh semua',
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        if (! $data['value']) return;
+
+                        $unitIds = \App\Models\Unit::with(['kamars.ketersediaan'])->get()->filter(function ($unit) use ($data) {
+                            $total = $unit->kamars->count();
+                            $terisi = $unit->kamars->filter(
+                                fn($kamar) =>
+                                $kamar->ketersediaan && $kamar->ketersediaan->status === 'terisi'
+                            )->count();
+
+                            return match ($data['value']) {
+                                'kosong' => $terisi === 0,
+                                'sebagian' => $terisi > 0 && $terisi < $total,
+                                'penuh' => $terisi === $total && $total > 0,
+                            };
+                        })->pluck('id');
+
+                        $query->whereIn('id', $unitIds);
+                    }),
+
+                Tables\Filters\SelectFilter::make('kecamatan')
+                    ->label('Kecamatan')
+                    ->relationship('alamat', 'kecamatan')
+                    ->searchable()
+                    ->preload(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->visible(fn() => auth()->user()->hasAnyRole(['Superadmin', 'Admin', 'Owner'])),
+
+                Tables\Actions\EditAction::make()
+                    ->visible(fn() => auth()->user()->hasAnyRole(['Superadmin', 'Admin'])),
+
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn() => auth()->user()->hasAnyRole(['Superadmin', 'Admin']))
+                    ->requiresConfirmation(),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
+
 
     public static function getRelations(): array
     {

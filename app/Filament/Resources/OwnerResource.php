@@ -24,6 +24,11 @@ class OwnerResource extends Resource
 
     protected static ?string $navigationGroup = 'SuperAdmin';
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasRole('Superadmin');
+    }
+
 
     public static function form(Form $form): Form
     {

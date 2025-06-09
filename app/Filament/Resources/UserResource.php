@@ -23,6 +23,11 @@ class UserResource extends Resource
 
     protected static ?string $navigationGroup = 'SuperAdmin';
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasRole(['Superadmin', 'Admin']);
+    }
+
     public static function form(Form $form): Form
     {
         return $form

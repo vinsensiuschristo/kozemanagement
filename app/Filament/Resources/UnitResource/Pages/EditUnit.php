@@ -10,6 +10,14 @@ class EditUnit extends EditRecord
 {
     protected static string $resource = UnitResource::class;
 
+    // public function canEdit(): bool
+    // {
+    //     return auth()->user()->hasAnyRole([
+    //         'Superadmin',
+    //         'Admin'
+    //     ]);
+    // }
+
     protected function getHeaderActions(): array
     {
         return [
