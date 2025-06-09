@@ -18,7 +18,6 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
-use Filament\Navigation\NavigationItem;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -29,33 +28,26 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-
-            // tambahan
             ->when(
                 auth()->check() && auth()->user()->hasRole('Superadmin'),
                 fn($panel) => $panel->plugin(FilamentSpatieRolesPermissionsPlugin::make())
             )
             ->sidebarCollapsibleOnDesktop(true)
-            // ->brand(view('components.filament.brand'))
             ->brandName('Koze Management')
-            ->brandLogo(
-                asset('images/logo.png'),
-            )
-            ->brandLogoHeight(
-                '2.5rem',
-            )
-
+            ->brandLogo(asset('images/logo.png'))
+            ->brandLogoHeight('2.5rem')
             ->colors([
                 'primary' => Color::Amber,
+                'gray' => Color::Slate,
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                \App\Filament\Pages\Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
+                // Custom widgets akan auto-discovered
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -70,6 +62,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->spa(); // Enable SPA mode untuk performa lebih baik
     }
 }
