@@ -40,4 +40,9 @@ class Kamar extends Model
     {
         return $this->hasOne(KetersediaanKamar::class, 'kamar_id');
     }
+
+    public function logs()
+    {
+        return $this->hasMany(LogPenghuni::class);
+    }
 }

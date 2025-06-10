@@ -32,7 +32,7 @@
 
     <!-- Footer Info -->
     <div class="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
-        <p>Dashboard diperbarui secara real-time • Terakhir diperbarui: {{ now()->format('H:i:s') }}</p>
+        <p>Dashboard diperbarui secara real-time • Terakhir diperbarui: {{ now('Asia/Jakarta')->format('H:i:s') }}</p>
     </div>
 
     <!-- Custom Styles -->

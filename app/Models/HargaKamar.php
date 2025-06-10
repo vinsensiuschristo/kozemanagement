@@ -11,6 +11,8 @@ class HargaKamar extends Model
         'id',
         'tipe_kamar_id',
         'harga_perbulan',
+        'harga_perminggu',
+        'harga_perhari',
         'minimal_deposit',
     ];
 
