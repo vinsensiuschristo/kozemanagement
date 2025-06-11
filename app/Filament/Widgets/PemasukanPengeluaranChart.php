@@ -7,20 +7,20 @@ use App\Models\Pengeluaran;
 use App\Models\Unit;
 use Filament\Widgets\ChartWidget;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class PemasukanPengeluaranChart extends ChartWidget
 {
-    protected static ?string $heading = 'Pemasukan vs Pengeluaran';
-    protected static ?string $description = 'Perbandingan pemasukan dan pengeluaran per periode';
+    protected static ?string $heading = 'Analisis Keuangan';
+    protected static ?string $description = 'Perbandingan pemasukan dan pengeluaran';
     protected static ?int $sort = 2;
     protected static ?string $pollingInterval = '60s';
 
-    public ?string $filter = '3_months';
+    public ?string $filter = '6_months';
 
     protected function getFilters(): ?array
     {
         return [
-            '1_month' => '1 Bulan',
             '3_months' => '3 Bulan',
             '6_months' => '6 Bulan',
             '1_year' => '1 Tahun',
@@ -29,6 +29,13 @@ class PemasukanPengeluaranChart extends ChartWidget
 
     protected function getData(): array
     {
+        $user = Auth::user();
+        $isOwner = $user->hasRole('Owner');
+
+        $unitIds = $isOwner ?
+            Unit::where('id_owner', $user->owner?->id)->pluck('id') :
+            Unit::pluck('id');
+
         $months = $this->getMonthsRange();
         $pemasukanData = [];
         $pengeluaranData = [];
@@ -37,11 +44,13 @@ class PemasukanPengeluaranChart extends ChartWidget
         foreach ($months as $month) {
             $labels[] = $month->format('M Y');
 
-            $pemasukan = Pemasukan::whereYear('tanggal', $month->year)
+            $pemasukan = Pemasukan::whereIn('unit_id', $unitIds)
+                ->whereYear('tanggal', $month->year)
                 ->whereMonth('tanggal', $month->month)
                 ->sum('jumlah');
 
-            $pengeluaran = Pengeluaran::whereYear('tanggal', $month->year)
+            $pengeluaran = Pengeluaran::whereIn('unit_id', $unitIds)
+                ->whereYear('tanggal', $month->year)
                 ->whereMonth('tanggal', $month->month)
                 ->sum('jumlah');
 
@@ -54,9 +63,10 @@ class PemasukanPengeluaranChart extends ChartWidget
                 [
                     'label' => 'Pemasukan',
                     'data' => $pemasukanData,
-                    'backgroundColor' => 'rgba(34, 197, 94, 0.8)',
-                    'borderColor' => 'rgb(34, 197, 94)',
+                    'backgroundColor' => 'rgba(16, 185, 129, 0.8)',
+                    'borderColor' => 'rgb(16, 185, 129)',
                     'borderWidth' => 2,
+                    'borderRadius' => 4,
                 ],
                 [
                     'label' => 'Pengeluaran',
@@ -64,6 +74,7 @@ class PemasukanPengeluaranChart extends ChartWidget
                     'backgroundColor' => 'rgba(239, 68, 68, 0.8)',
                     'borderColor' => 'rgb(239, 68, 68)',
                     'borderWidth' => 2,
+                    'borderRadius' => 4,
                 ],
             ],
             'labels' => $labels,
@@ -79,11 +90,10 @@ class PemasukanPengeluaranChart extends ChartWidget
     {
         $months = collect();
         $range = match ($this->filter) {
-            '1_month' => 1,
             '3_months' => 3,
             '6_months' => 6,
             '1_year' => 12,
-            default => 3,
+            default => 6,
         };
 
         for ($i = $range - 1; $i >= 0; $i--) {
@@ -98,18 +108,36 @@ class PemasukanPengeluaranChart extends ChartWidget
         return [
             'responsive' => true,
             'maintainAspectRatio' => false,
-            'scales' => [
-                'y' => [
-                    'beginAtZero' => true,
-                    'ticks' => [
-                        'callback' => 'function(value) { return "Rp " + value.toLocaleString("id-ID"); }',
+            'plugins' => [
+                'legend' => [
+                    'position' => 'top',
+                    'labels' => [
+                        'usePointStyle' => true,
+                        'padding' => 20,
+                    ],
+                ],
+                'tooltip' => [
+                    'backgroundColor' => 'rgba(0, 0, 0, 0.8)',
+                    'titleColor' => 'white',
+                    'bodyColor' => 'white',
+                    'callbacks' => [
+                        'label' => 'function(context) { return context.dataset.label + ": Rp " + context.parsed.y.toLocaleString("id-ID"); }',
                     ],
                 ],
             ],
-            'plugins' => [
-                'tooltip' => [
-                    'callbacks' => [
-                        'label' => 'function(context) { return context.dataset.label + ": Rp " + context.parsed.y.toLocaleString("id-ID"); }',
+            'scales' => [
+                'x' => [
+                    'grid' => [
+                        'display' => false,
+                    ],
+                ],
+                'y' => [
+                    'beginAtZero' => true,
+                    'grid' => [
+                        'color' => 'rgba(0, 0, 0, 0.1)',
+                    ],
+                    'ticks' => [
+                        'callback' => 'function(value) { return "Rp " + value.toLocaleString("id-ID"); }',
                     ],
                 ],
             ],

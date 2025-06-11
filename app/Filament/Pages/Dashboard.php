@@ -2,52 +2,44 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Dashboard as BaseDashboard;
+use Filament\Pages\Page;
+use Illuminate\Support\Facades\Auth;
 
-class Dashboard extends BaseDashboard
+class Dashboard extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-home';
     protected static string $view = 'filament.pages.dashboard';
 
-    public function getWidgets(): array
+    public $role;
+    public $user;
+    public $ownerData;
+
+    public function mount(): void
     {
-        return [
-            // Stats Overview
-            \App\Filament\Widgets\KonfirmasiStatsWidget::class,
-            \App\Filament\Widgets\PenghuniStatsWidget::class,
+        $this->user = Auth::user();
+        $this->role = $this->user->getRoleNames()->first();
 
-            // Charts
-            \App\Filament\Widgets\PemasukanPengeluaranChart::class,
-            \App\Filament\Widgets\KamarStatusChart::class,
-            \App\Filament\Widgets\HunianPerTipeChart::class,
-
-            // Tables
-            \App\Filament\Widgets\UnitPerformanceWidget::class,
-            \App\Filament\Widgets\PengeluaranPerUnitWidget::class,
-            \App\Filament\Widgets\TopPerformingUnitsWidget::class,
-
-            // Quick Actions
-            \App\Filament\Widgets\QuickActionsWidget::class,
-        ];
-    }
-
-    public function getColumns(): int | string | array
-    {
-        return [
-            'sm' => 1,
-            'md' => 2,
-            'lg' => 3,
-            'xl' => 4,
-        ];
+        // Jika owner, ambil data owner
+        if ($this->role === 'Owner') {
+            $this->ownerData = $this->user->owner;
+        }
     }
 
     public function getTitle(): string
     {
-        return 'Dashboard Koze Management';
+        return match ($this->role) {
+            'Superadmin' => '🚀 Dashboard Superadmin',
+            'Owner' => '🏢 Dashboard Owner - ' . ($this->ownerData?->nama ?? 'Owner'),
+            default => '📊 Dashboard Koze Management'
+        };
     }
 
     public function getSubheading(): ?string
     {
-        return 'Kelola unit kos Anda dengan mudah dan efisien';
+        return match ($this->role) {
+            'Superadmin' => 'Kelola seluruh sistem manajemen kos',
+            'Owner' => 'Kelola unit kos Anda dengan mudah dan efisien',
+            default => 'Sistem manajemen kos terpadu'
+        };
     }
 }

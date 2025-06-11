@@ -10,6 +10,7 @@ use App\Models\HargaKamar;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Number;
+use Illuminate\Support\Facades\Auth;
 
 class StatsOverviewWidget extends BaseWidget
 {
@@ -18,23 +19,47 @@ class StatsOverviewWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        // Hitung statistik utama
-        $totalUnits = Unit::count();
-        $totalKamars = Kamar::count();
-        $totalOwners = Owner::count();
+        $user = Auth::user();
+        $isOwner = $user->hasRole('Owner');
+
+        // Filter berdasarkan role
+        if ($isOwner) {
+            $unitIds = Unit::where('id_owner', $user->owner?->id)->pluck('id');
+            $totalUnits = Unit::where('id_owner', $user->owner?->id)->count();
+            $totalKamars = Kamar::whereIn('unit_id', $unitIds)->count();
+            $totalOwners = 1; // Owner hanya melihat dirinya sendiri
+        } else {
+            $unitIds = Unit::pluck('id');
+            $totalUnits = Unit::count();
+            $totalKamars = Kamar::count();
+            $totalOwners = Owner::count();
+        }
 
         // Hitung ketersediaan kamar
-        $kamarTersedia = KetersediaanKamar::where('status', 'kosong')->count();
-        $kamarTerisi = KetersediaanKamar::where('status', 'terisi')->count();
-        $kamarBooked = KetersediaanKamar::where('status', 'booked')->count();
+        $kamarTersedia = KetersediaanKamar::whereHas('kamar', function ($query) use ($unitIds) {
+            $query->whereIn('unit_id', $unitIds);
+        })->where('status', 'kosong')->count();
+
+        $kamarTerisi = KetersediaanKamar::whereHas('kamar', function ($query) use ($unitIds) {
+            $query->whereIn('unit_id', $unitIds);
+        })->where('status', 'terisi')->count();
+
+        $kamarBooked = KetersediaanKamar::whereHas('kamar', function ($query) use ($unitIds) {
+            $query->whereIn('unit_id', $unitIds);
+        })->where('status', 'booked')->count();
 
         // Hitung tingkat hunian
         $tingkatHunian = $totalKamars > 0 ? round(($kamarTerisi / $totalKamars) * 100, 1) : 0;
 
         // Hitung revenue potensial
-        $revenuePotensial = HargaKamar::sum('harga_perbulan');
+        $revenuePotensial = HargaKamar::whereHas('tipeKamar', function ($query) use ($unitIds) {
+            $query->whereIn('unit_id', $unitIds);
+        })->sum('harga_perbulan');
+
         $revenueAktual = HargaKamar::whereHas('tipeKamar.ketersediaanKamars', function ($query) {
             $query->where('status', 'terisi');
+        })->whereHas('tipeKamar', function ($query) use ($unitIds) {
+            $query->whereIn('unit_id', $unitIds);
         })->sum('harga_perbulan');
 
         return [

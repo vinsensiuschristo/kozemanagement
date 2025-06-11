@@ -3,7 +3,9 @@
 namespace App\Filament\Widgets;
 
 use App\Models\TipeKamar;
+use App\Models\Unit;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Facades\Auth;
 
 class HunianPerTipeChart extends ChartWidget
 {
@@ -14,7 +16,17 @@ class HunianPerTipeChart extends ChartWidget
 
     protected function getData(): array
     {
-        $tipeKamars = TipeKamar::with(['ketersediaanKamars'])->get();
+        $user = Auth::user();
+        $isOwner = $user->hasRole('Owner');
+
+        if ($isOwner) {
+            $unitIds = Unit::where('id_owner', $user->owner?->id)->pluck('id');
+            $tipeKamars = TipeKamar::with(['ketersediaanKamars'])
+                ->whereIn('unit_id', $unitIds)
+                ->get();
+        } else {
+            $tipeKamars = TipeKamar::with(['ketersediaanKamars'])->get();
+        }
 
         $labels = [];
         $dataKosong = [];

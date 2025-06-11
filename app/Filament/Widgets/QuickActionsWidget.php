@@ -3,46 +3,104 @@
 namespace App\Filament\Widgets;
 
 use Filament\Widgets\Widget;
+use Illuminate\Support\Facades\Auth;
 
 class QuickActionsWidget extends Widget
 {
     protected static string $view = 'filament.widgets.quick-actions';
-    protected static ?int $sort = 5;
+    protected static ?int $sort = 10;
     protected int | string | array $columnSpan = 'full';
 
     protected function getViewData(): array
     {
-        return [
-            'actions' => [
+        $user = Auth::user();
+        $isSuperadmin = $user->hasRole('Superadmin');
+        $isOwner = $user->hasRole('Owner');
+
+        $actions = [];
+
+        if ($isSuperadmin) {
+            $actions = [
                 [
-                    'label' => 'Tambah Kos Baru',
-                    'icon' => 'heroicon-o-plus-circle',
-                    'url' => '/admin/units/create',
-                    'color' => 'primary',
-                    'description' => 'Daftarkan unit kos baru',
+                    'label' => 'Kelola Unit',
+                    'icon' => 'heroicon-o-home-modern',
+                    'url' => '/admin/units',
+                    'gradient' => 'from-blue-500 to-blue-600',
                 ],
                 [
                     'label' => 'Kelola Kamar',
                     'icon' => 'heroicon-o-squares-2x2',
                     'url' => '/admin/kamars',
-                    'color' => 'info',
-                    'description' => 'Atur ketersediaan kamar',
+                    'gradient' => 'from-cyan-500 to-cyan-600',
                 ],
                 [
-                    'label' => 'Data Pemilik',
+                    'label' => 'Data Penghuni',
                     'icon' => 'heroicon-o-users',
-                    'url' => '/admin/owners',
-                    'color' => 'success',
-                    'description' => 'Kelola data pemilik kos',
+                    'url' => '/admin/penghunis',
+                    'gradient' => 'from-green-500 to-green-600',
                 ],
                 [
-                    'label' => 'Laporan Hunian',
+                    'label' => 'Laporan Keuangan',
                     'icon' => 'heroicon-o-chart-bar',
-                    'url' => '/admin/reports',
-                    'color' => 'warning',
-                    'description' => 'Lihat laporan dan analitik',
+                    'url' => '/admin/pemasukans',
+                    'gradient' => 'from-orange-500 to-orange-600',
                 ],
-            ],
+                [
+                    'label' => 'Konfirmasi Bayar',
+                    'icon' => 'heroicon-o-check-circle',
+                    'url' => '/admin/pemasukans?tableFilters[is_konfirmasi][value]=0',
+                    'gradient' => 'from-red-500 to-red-600',
+                ],
+                [
+                    'label' => 'Kelola Owners',
+                    'icon' => 'heroicon-o-user-group',
+                    'url' => '/admin/owners',
+                    'gradient' => 'from-purple-500 to-purple-600',
+                ],
+            ];
+        } elseif ($isOwner) {
+            $actions = [
+                [
+                    'label' => 'Tambah Unit',
+                    'icon' => 'heroicon-o-plus-circle',
+                    'url' => '/admin/units/create',
+                    'gradient' => 'from-blue-500 to-blue-600',
+                ],
+                [
+                    'label' => 'Kelola Kamar',
+                    'icon' => 'heroicon-o-squares-2x2',
+                    'url' => '/admin/kamars',
+                    'gradient' => 'from-cyan-500 to-cyan-600',
+                ],
+                [
+                    'label' => 'Data Penghuni',
+                    'icon' => 'heroicon-o-users',
+                    'url' => '/admin/penghunis',
+                    'gradient' => 'from-green-500 to-green-600',
+                ],
+                [
+                    'label' => 'Laporan Keuangan',
+                    'icon' => 'heroicon-o-chart-bar',
+                    'url' => '/admin/pemasukans',
+                    'gradient' => 'from-orange-500 to-orange-600',
+                ],
+                [
+                    'label' => 'Konfirmasi Bayar',
+                    'icon' => 'heroicon-o-check-circle',
+                    'url' => '/admin/pemasukans?tableFilters[is_konfirmasi][value]=0',
+                    'gradient' => 'from-red-500 to-red-600',
+                ],
+                [
+                    'label' => 'Pengaturan',
+                    'icon' => 'heroicon-o-cog-6-tooth',
+                    'url' => '/admin/owners/' . Auth::user()->owner?->id . '/edit',
+                    'gradient' => 'from-gray-500 to-gray-600',
+                ],
+            ];
+        }
+
+        return [
+            'actions' => $actions,
         ];
     }
 }

@@ -7,6 +7,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class TopPerformingUnitsWidget extends BaseWidget
 {
@@ -17,22 +18,30 @@ class TopPerformingUnitsWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
+        $user = Auth::user();
+        $isOwner = $user->hasRole('Owner');
+
+        $query = Unit::query()
+            ->with(['kamars.ketersediaan', 'alamat', 'owner'])
+            ->withCount([
+                'kamars',
+                'kamars as kamar_terisi_count' => function (Builder $query) {
+                    $query->whereHas('ketersediaan', function (Builder $query) {
+                        $query->where('status', 'terisi');
+                    });
+                },
+            ])
+            ->having('kamars_count', '>', 0)
+            ->orderByRaw('(kamar_terisi_count / kamars_count) DESC')
+            ->limit(10);
+
+        // Filter berdasarkan role
+        if ($isOwner) {
+            $query->where('id_owner', $user->owner?->id);
+        }
+
         return $table
-            ->query(
-                Unit::query()
-                    ->with(['kamars.ketersediaan', 'alamat', 'owner'])
-                    ->withCount([
-                        'kamars',
-                        'kamars as kamar_terisi_count' => function (Builder $query) {
-                            $query->whereHas('ketersediaan', function (Builder $query) {
-                                $query->where('status', 'terisi');
-                            });
-                        },
-                    ])
-                    ->having('kamars_count', '>', 0)
-                    ->orderByRaw('(kamar_terisi_count / kamars_count) DESC')
-                    ->limit(10)
-            )
+            ->query($query)
             ->columns([
                 Tables\Columns\TextColumn::make('nama_cluster')
                     ->label('Nama Kos')
@@ -46,7 +55,8 @@ class TopPerformingUnitsWidget extends BaseWidget
                     ->label('Pemilik')
                     ->searchable()
                     ->badge()
-                    ->color('info'),
+                    ->color('info')
+                    ->visible(!$isOwner), // Hide untuk owner
 
                 Tables\Columns\TextColumn::make('alamat.kecamatan')
                     ->label('Lokasi')

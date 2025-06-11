@@ -2,57 +2,66 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\HargaKamar;
-use App\Models\KetersediaanKamar;
+use App\Models\Pemasukan;
+use App\Models\Unit;
 use Filament\Widgets\ChartWidget;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class RevenueTrendChart extends ChartWidget
 {
-    protected static ?string $heading = 'Trend Revenue Bulanan';
-    protected static ?string $description = 'Proyeksi pendapatan 6 bulan terakhir';
-    protected static ?int $sort = 6;
-    protected static ?string $pollingInterval = '120s';
+    protected static ?string $heading = 'Trend Revenue';
+    protected static ?string $description = 'Perkembangan revenue dalam 6 bulan terakhir';
+    protected static ?int $sort = 4;
+    protected static ?string $pollingInterval = '60s';
 
     protected function getData(): array
     {
+        $user = Auth::user();
+        $isOwner = $user->hasRole('owner');
+
+        if ($isOwner) {
+            $unitIds = Unit::where('id_owner', $user->owner?->id)->pluck('id');
+        } else {
+            $unitIds = Unit::pluck('id');
+        }
+
         $months = collect();
-        $revenues = collect();
+        $revenueData = [];
+        $labels = [];
 
-        // Generate data untuk 6 bulan terakhir
+        // Ambil data 6 bulan terakhir
         for ($i = 5; $i >= 0; $i--) {
-            $date = Carbon::now()->subMonths($i);
-            $months->push($date->format('M Y'));
+            $month = Carbon::now()->subMonths($i);
+            $months->push($month);
+            $labels[] = $month->format('M Y');
 
-            // Simulasi revenue berdasarkan kamar terisi
-            $kamarTerisi = KetersediaanKamar::where('status', 'terisi')->count();
-            $avgHarga = HargaKamar::avg('harga_perbulan') ?? 0;
+            $revenue = Pemasukan::whereIn('unit_id', $unitIds)
+                ->whereYear('tanggal', $month->year)
+                ->whereMonth('tanggal', $month->month)
+                ->sum('jumlah');
 
-            // Tambahkan variasi untuk simulasi trend
-            $variation = 1 + (sin($i * 0.5) * 0.1); // Variasi ±10%
-            $revenue = $kamarTerisi * $avgHarga * $variation;
-
-            $revenues->push($revenue);
+            $revenueData[] = $revenue;
         }
 
         return [
             'datasets' => [
                 [
-                    'label' => 'Revenue (Rp)',
-                    'data' => $revenues->toArray(),
-                    'borderColor' => 'rgb(59, 130, 246)',
-                    'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
+                    'label' => 'Revenue',
+                    'data' => $revenueData,
+                    'borderColor' => 'rgb(16, 185, 129)',
+                    'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
                     'borderWidth' => 3,
-                    'fill' => true,
                     'tension' => 0.4,
-                    'pointBackgroundColor' => 'rgb(59, 130, 246)',
-                    'pointBorderColor' => 'white',
+                    'fill' => true,
+                    'pointBackgroundColor' => 'rgb(16, 185, 129)',
+                    'pointBorderColor' => '#fff',
                     'pointBorderWidth' => 2,
-                    'pointRadius' => 6,
-                    'pointHoverRadius' => 8,
+                    'pointRadius' => 4,
+                    'pointHoverRadius' => 6,
                 ],
             ],
-            'labels' => $months->toArray(),
+            'labels' => $labels,
         ];
     }
 
@@ -66,31 +75,6 @@ class RevenueTrendChart extends ChartWidget
         return [
             'responsive' => true,
             'maintainAspectRatio' => false,
-            'scales' => [
-                'x' => [
-                    'grid' => [
-                        'display' => false,
-                    ],
-                    'ticks' => [
-                        'font' => [
-                            'size' => 11,
-                            'weight' => 'bold',
-                        ],
-                    ],
-                ],
-                'y' => [
-                    'beginAtZero' => true,
-                    'grid' => [
-                        'color' => 'rgba(0, 0, 0, 0.1)',
-                    ],
-                    'ticks' => [
-                        'callback' => 'function(value) { return "Rp " + value.toLocaleString("id-ID"); }',
-                        'font' => [
-                            'size' => 11,
-                        ],
-                    ],
-                ],
-            ],
             'plugins' => [
                 'legend' => [
                     'display' => false,
@@ -104,9 +88,33 @@ class RevenueTrendChart extends ChartWidget
                     ],
                 ],
             ],
+            'scales' => [
+                'x' => [
+                    'grid' => [
+                        'display' => false,
+                    ],
+                    'ticks' => [
+                        'font' => [
+                            'size' => 12,
+                        ],
+                    ],
+                ],
+                'y' => [
+                    'beginAtZero' => true,
+                    'grid' => [
+                        'color' => 'rgba(0, 0, 0, 0.05)',
+                    ],
+                    'ticks' => [
+                        'callback' => 'function(value) { return "Rp " + value.toLocaleString("id-ID"); }',
+                        'font' => [
+                            'size' => 11,
+                        ],
+                    ],
+                ],
+            ],
             'animation' => [
-                'duration' => 2000,
-                'easing' => 'easeInOutQuart',
+                'duration' => 1000,
+                'easing' => 'easeOutQuart',
             ],
         ];
     }
