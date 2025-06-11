@@ -11,6 +11,8 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -30,14 +32,16 @@ class PengeluaranResource extends Resource
     {
         return $form->schema([
             Select::make('unit_id')
-                ->relationship('unit', 'nama')
+                ->relationship('unit', 'nama_cluster')
                 ->searchable()
                 ->required()
                 ->label('Unit'),
 
             Forms\Components\DatePicker::make('tanggal')
                 ->required()
-                ->label('Tanggal Pengeluaran'),
+                ->label('Tanggal Pengeluaran')
+                ->beforeOrEqual(now())
+                ->native(false),
 
             Forms\Components\TextInput::make('jumlah')
                 ->numeric()
@@ -45,9 +49,19 @@ class PengeluaranResource extends Resource
                 ->prefix('Rp')
                 ->label('Jumlah'),
 
-            Forms\Components\TextInput::make('kategori')
+            Select::make('kategori')
+                ->label('Kategori Pengeluaran')
                 ->required()
-                ->label('Kategori (Listrik, Air, dll)'),
+                ->options([
+                    'listrik' => 'Listrik',
+                    'air' => 'Air',
+                    'kebersihan' => 'Kebersihan',
+                    'internet' => 'Internet',
+                    'perawatan' => 'Perawatan',
+                    'lainnya' => 'Lainnya',
+                ])
+                ->searchable()
+                ->placeholder('Pilih kategori'),
 
             Textarea::make('deskripsi')
                 ->nullable()
@@ -59,16 +73,18 @@ class PengeluaranResource extends Resource
                 ->nullable(),
 
             Toggle::make('is_konfirmasi')
-                ->label('Telah Dikonfirmasi')
-                ->default(false),
+                ->default(false)
+                ->hidden()
+                ->dehydrated(),
         ]);
     }
+
 
     public static function table(Table $table): Table
     {
         return $table->columns([
             Tables\Columns\TextColumn::make('tanggal')->date()->label('Tanggal'),
-            Tables\Columns\TextColumn::make('unit.nama')->label('Unit'),
+            Tables\Columns\TextColumn::make('unit.nama_cluster')->label('Unit'),
             Tables\Columns\TextColumn::make('kategori')->label('Kategori'),
             Tables\Columns\TextColumn::make('jumlah')->money('IDR')->label('Jumlah'),
             Tables\Columns\IconColumn::make('is_konfirmasi')
