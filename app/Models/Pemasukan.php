@@ -6,40 +6,44 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
-class LogPenghuni extends Model
+class Pemasukan extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $table = 'log_penghunis';
-
     protected $fillable = [
+        'unit_id',
         'penghuni_id',
         'kamar_id',
+        'checkin_id',
         'tanggal',
-        'status',
+        'jumlah',
+        'deskripsi',
+        'bukti',
+        'is_konfirmasi',
         'created_by',
     ];
 
-    // Relasi ke Penghuni
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class);
+    }
     public function penghuni()
     {
         return $this->belongsTo(Penghuni::class);
     }
-
-    // Relasi ke Kamar
     public function kamar()
     {
         return $this->belongsTo(Kamar::class);
     }
 
-    // Relasi ke User (yang membuat log)
-    public function createdBy()
+    // logPenghuni
+    public function checkin()
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(LogPenghuni::class, 'checkin_id');
     }
 
-    public function pemasukan()
+    public function user()
     {
-        return $this->hasOne(Pemasukan::class, 'log_penghuni_id');
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

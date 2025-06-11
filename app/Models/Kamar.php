@@ -45,4 +45,21 @@ class Kamar extends Model
     {
         return $this->hasMany(LogPenghuni::class);
     }
+
+    public function logPemasukan()
+    {
+        return $this->hasMany(Pemasukan::class);
+    }
+
+    public function hargaKamar()
+    {
+        return $this->hasOneThrough(
+            \App\Models\HargaKamar::class,
+            \App\Models\TipeKamar::class,
+            'id',             // Foreign key di TipeKamar ke HargaKamar
+            'tipe_kamar_id',  // Foreign key di HargaKamar
+            'tipe_kamar_id',  // Local key di Kamar
+            'id'              // Local key di TipeKamar
+        );
+    }
 }
