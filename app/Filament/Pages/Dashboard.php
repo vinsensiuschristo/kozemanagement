@@ -12,11 +12,21 @@ class Dashboard extends BaseDashboard
     public function getWidgets(): array
     {
         return [
-            \App\Filament\Widgets\StatsOverviewWidget::class,
+            // Stats Overview
+            \App\Filament\Widgets\KonfirmasiStatsWidget::class,
+            \App\Filament\Widgets\PenghuniStatsWidget::class,
+
+            // Charts
+            \App\Filament\Widgets\PemasukanPengeluaranChart::class,
             \App\Filament\Widgets\KamarStatusChart::class,
             \App\Filament\Widgets\HunianPerTipeChart::class,
-            \App\Filament\Widgets\RevenueTrendChart::class,
+
+            // Tables
+            \App\Filament\Widgets\UnitPerformanceWidget::class,
+            \App\Filament\Widgets\PengeluaranPerUnitWidget::class,
             \App\Filament\Widgets\TopPerformingUnitsWidget::class,
+
+            // Quick Actions
             \App\Filament\Widgets\QuickActionsWidget::class,
         ];
     }
@@ -29,5 +39,15 @@ class Dashboard extends BaseDashboard
             'lg' => 3,
             'xl' => 4,
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return 'Dashboard Koze Management';
+    }
+
+    public function getSubheading(): ?string
+    {
+        return 'Kelola unit kos Anda dengan mudah dan efisien';
     }
 }

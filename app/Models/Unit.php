@@ -80,4 +80,14 @@ class Unit extends Model
     {
         return $this->hasMany(KetersediaanKamar::class, 'unit_id');
     }
+
+    public function pemasukans()
+    {
+        return $this->hasMany(Pemasukan::class, 'unit_id');
+    }
+
+    public function pengeluarans()
+    {
+        return $this->hasMany(Pengeluaran::class, 'unit_id');
+    }
 }
