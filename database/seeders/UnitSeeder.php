@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Unit;
+use App\Models\AlamatUnit;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 
@@ -876,6 +877,39 @@ class UnitSeeder extends Seeder
             ],
         ];
 
+        $alamatMapping = [
+            'allogio barat'   => 'Medang, Kec. Pagedangan, Kabupaten Tangerang, Banten 15334',
+            'allogio timur'   => 'Jl. Alloggio Timur 2 No.27, Medang, Kec. Pagedangan, Kabupaten Tangerang, Banten 15334',
+            'anarta'          => 'Vanya Park, Jl. Boulevard Barat BSD City, Cijantra, Pagedangan, Tangerang Regency, Banten 15335',
+            'alesha'          => 'Jl. Raya Pagedangan No.67, Pagedangan, Kec. Pagedangan, Kabupaten Tangerang, Banten 15339',
+            'piazza'          => 'Jl. Lkr. Botanika Selatan, Lengkong Kulon, Kec. Pagedangan, Kabupaten Tangerang, Banten',
+            'zena'            => 'PJ6G+3P9, Lengkong Kulon, Kec. Pagedangan, Kabupaten Tangerang, Banten 15331',
+            'studento'        => 'Jl. Studento No.18, Pagedangan, Kec. Pagedangan, Kabupaten Tangerang, Banten 15339',
+            'regentown'       => 'Regentown A3/A5, Pagedangan, Kec. Pagedangan, Kabupaten Tangerang, Banten 15339',
+            'benhil'          => 'ruko paskal timur Scientia Garden - S, Jl. Scientia Square Barat 1 No.20, Medang, Kec. Pagedangan, Kabupaten Tangerang, Banten 15810',
+            'tanjung duren'   => 'Jl. Salak Barat 8 No.11, RT.12/RW.5, Tj. Duren Utara, Kec. Grogol petamburan, Kota Jakarta Barat, Daerah Khusus Ibukota Jakarta 11470',
+            'mangga besar'    => 'Jl. Kebon Jeruk XIII No.30A, RT.5/RW.4, Taman Sari, Kec. Taman Sari, Kota Jakarta Barat, Daerah Khusus Ibukota Jakarta 11150',
+            'taman bromo'     => 'Jl. Gn. Tim. No.37, Bencongan, Kec. Klp. Dua, Kabupaten Tangerang, Banten 15810',
+        ];
+
+        $mappingKhusus = [
+            'jl salak barat' => [
+                'provinsi' => 'DKI Jakarta',
+                'kabupaten' => 'Kota Jakarta Barat',
+                'kecamatan' => 'Grogol Petamburan',
+            ],
+            'jl kebun jeruk' => [
+                'provinsi' => 'DKI Jakarta',
+                'kabupaten' => 'Kota Jakarta Barat',
+                'kecamatan' => 'Taman Sari',
+            ],
+            'taman bromo' => [
+                'provinsi' => 'Banten',
+                'kabupaten' => 'Kabupaten Tangerang',
+                'kecamatan' => 'Kelapa Dua',
+            ],
+        ];
+
         foreach ($dataUnitsLama as $data) {
             $ownerUuid = $ownerMap[$data['id_owner_lama']] ?? null;
             if (!$ownerUuid) {
@@ -894,8 +928,27 @@ class UnitSeeder extends Seeder
                 $tanggalAkhir = now()->addYear()->toDateString();
             }
 
+            $unitId = Str::uuid();
+            $namaCluster = $data['alamat'] . ' ' . $data['no_unit'];
+            $namaClusterLower = strtolower($namaCluster);
+
+            // Default lokasi
+            $provinsi = 'Banten';
+            $kabupaten = 'Kabupaten Tangerang';
+            $kecamatan = 'Pagedangan';
+
+            // Cek mapping khusus
+            foreach ($mappingKhusus as $keyword => $lokasi) {
+                if (str_contains($namaClusterLower, $keyword)) {
+                    $provinsi = $lokasi['provinsi'];
+                    $kabupaten = $lokasi['kabupaten'];
+                    $kecamatan = $lokasi['kecamatan'];
+                    break;
+                }
+            }
+
             Unit::create([
-                'id' => Str::uuid(),
+                'id' => $unitId,
                 'id_owner' => $ownerUuid,
                 'nomor_kontrak' => $data['no_kontrak'],
                 'tanggal_awal_kontrak' => $tanggalAwal,
@@ -910,6 +963,16 @@ class UnitSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
                 'status' => $data['active'] ?? false,
+            ]);
+
+            // Simpan alamat_unit
+            AlamatUnit::create([
+                'unit_id' => $unitId,
+                'alamat' => $data['alamat'],
+                'provinsi' => $provinsi,
+                'kabupaten' => $kabupaten,
+                'kecamatan' => $kecamatan,
+                'deskripsi' => null,
             ]);
         }
     }
