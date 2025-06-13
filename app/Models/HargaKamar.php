@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 
 class HargaKamar extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'id',
         'tipe_kamar_id',

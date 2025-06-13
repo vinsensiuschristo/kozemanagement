@@ -26,8 +26,6 @@ return new class extends Migration
             $table->text('deskripsi')->nullable();
             $table->year('tahun_dibangun')->nullable();
 
-            // $table->string('alamat')->nullable();
-
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
 
             $table->timestamps();

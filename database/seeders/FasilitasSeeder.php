@@ -10,52 +10,33 @@ class FasilitasSeeder extends Seeder
 {
     public function run(): void
     {
-        $now = Carbon::now()->toDateTimeString();
+        $timestamp = now();
 
-        $data = [
-            // fasilitas_umum
-            ['nama' => 'Ruang Tamu', 'tipe' => 'umum'],
-            ['nama' => 'Dapur Umum', 'tipe' => 'umum'],
-            ['nama' => 'Ruang Makan', 'tipe' => 'umum'],
-            ['nama' => 'Listrik Gratis', 'tipe' => 'umum'],
-            ['nama' => 'Wifi Umum', 'tipe' => 'umum'],
-            ['nama' => 'CCTV', 'tipe' => 'umum'],
-            ['nama' => 'Penjaga Kos', 'tipe' => 'umum'],
-            ['nama' => 'Balcon', 'tipe' => 'umum'],
+        DB::table('fasilitas')->insert([
+            ['nama' => 'Ruang Tamu', 'tipe' => 'umum', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Dapur Umum', 'tipe' => 'umum', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Ruang Makan', 'tipe' => 'umum', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Listrik Gratis', 'tipe' => 'umum', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Wifi Umum', 'tipe' => 'umum', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'CCTV', 'tipe' => 'umum', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Penjaga Kos', 'tipe' => 'umum', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Balcon', 'tipe' => 'umum', 'created_at' => $timestamp, 'updated_at' => $timestamp],
 
-            // fasilitas_kamar
-            ['nama' => 'AC', 'tipe' => 'kamar'],
-            ['nama' => 'Kipas Angin', 'tipe' => 'kamar'],
-            ['nama' => 'Kasur', 'tipe' => 'kamar'],
-            ['nama' => 'Meja Belajar', 'tipe' => 'kamar'],
-            ['nama' => 'Lemari', 'tipe' => 'kamar'],
-            ['nama' => 'TV', 'tipe' => 'kamar'],
-            ['nama' => 'Jendela', 'tipe' => 'kamar'],
-            ['nama' => 'Dispenser', 'tipe' => 'kamar'],
-            ['nama' => 'Kulkas Mini', 'tipe' => 'kamar'],
+            ['nama' => 'AC', 'tipe' => 'kamar', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Kipas Angin', 'tipe' => 'kamar', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Kasur', 'tipe' => 'kamar', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Meja Belajar', 'tipe' => 'kamar', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Lemari', 'tipe' => 'kamar', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'TV', 'tipe' => 'kamar', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Jendela', 'tipe' => 'kamar', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Dispenser', 'tipe' => 'kamar', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Kulkas Mini', 'tipe' => 'kamar', 'created_at' => $timestamp, 'updated_at' => $timestamp],
 
-            // fasilitas_kamar_mandi
-            ['nama' => 'Shower', 'tipe' => 'kamar_mandi'],
-            ['nama' => 'Air Panas', 'tipe' => 'kamar_mandi'],
-            ['nama' => 'Ember & Gayung', 'tipe' => 'kamar_mandi'],
-            ['nama' => 'Kloset Jongkok', 'tipe' => 'kamar_mandi'],
-            ['nama' => 'Kloset Duduk', 'tipe' => 'kamar_mandi'],
-            ['nama' => 'Wastafel', 'tipe' => 'kamar_mandi'],
-            ['nama' => 'Cermin', 'tipe' => 'kamar_mandi'],
-
-            // fasilitas_parkir
-            ['nama' => 'Parkir Motor', 'tipe' => 'parkir'],
-            ['nama' => 'Parkir Mobil', 'tipe' => 'parkir'],
-            ['nama' => 'Parkir Sepeda', 'tipe' => 'parkir'],
-            ['nama' => 'Parkir Tamu', 'tipe' => 'parkir'],
-            ['nama' => 'Area Parkir Beratap', 'tipe' => 'parkir'],
-        ];
-
-        foreach ($data as &$item) {
-            $item['created_at'] = $now;
-            $item['updated_at'] = $now;
-        }
-
-        DB::table('fasilitas')->insert($data);
+            ['nama' => 'Shower', 'tipe' => 'kamar_mandi', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Air Panas', 'tipe' => 'kamar_mandi', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Ember & Gayung', 'tipe' => 'kamar_mandi', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Kloset Jongkok', 'tipe' => 'kamar_mandi', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Kloset Duduk', 'tipe' => 'kamar_mandi', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+        ]);
     }
 }

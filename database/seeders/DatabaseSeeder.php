@@ -2,22 +2,49 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Panggil role seeder dulu
+        $this->call(RoleSeeder::class);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Buat akun Superadmin
+        $superadmin = User::firstOrCreate(
+            ['email' => 'superadmin@example.com'],
+            [
+                'name' => 'Super Admin',
+                'password' => Hash::make('password123'),
+            ]
+        );
+
+        $superadmin->assignRole('Superadmin');
+
+        $this->command->info('Akun Superadmin berhasil dibuat:');
+        $this->command->info('Email: superadmin@example.com');
+        $this->command->info('Password: password123');
+
+        // $this->call([
+        //     UserSeeder::class,
+        //     OwnerSeeder::class,
+        //     FasilitasSeeder::class,
+        //     UnitSeeder::class,
+        //     AlamatUnitSeeder::class,
+        //     FotoUnitSeeder::class,
+        //     TipeKamarSeeder::class,
+        //     KamarSeeder::class,
+        //     HargaKamarSeeder::class,
+        //     KetersediaanKamarSeeder::class,
+        //     FotoKamarSeeder::class,
+        //     FasilitasUnitSeeder::class,
+        //     PenghuniSeeder::class,
+        //     PemasukanSeeder::class,
+        //     PengeluaranSeeder::class,
+        //     LogPenghuniSeeder::class,
+        // ]);
     }
 }
