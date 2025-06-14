@@ -37,6 +37,30 @@ class FasilitasSeeder extends Seeder
             ['nama' => 'Ember & Gayung', 'tipe' => 'kamar_mandi', 'created_at' => $timestamp, 'updated_at' => $timestamp],
             ['nama' => 'Kloset Jongkok', 'tipe' => 'kamar_mandi', 'created_at' => $timestamp, 'updated_at' => $timestamp],
             ['nama' => 'Kloset Duduk', 'tipe' => 'kamar_mandi', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+
+            // Fasilitas Kamar
+            ['nama' => 'Water Heater', 'tipe' => 'kamar', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+
+            // Fasilitas Umum
+            ['nama' => 'Kolam renang depan', 'tipe' => 'umum', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Laundry 10Kg', 'tipe' => 'umum', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Laundry 20Kg', 'tipe' => 'umum', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Cuci Baju', 'tipe' => 'umum', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Token Sendiri', 'tipe' => 'umum', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Laundry 13KG', 'tipe' => 'umum', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Laundry 2 Stell Per Hari', 'tipe' => 'umum', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+
+            // Fasilitas Kamar Mandi
+            ['nama' => 'Kamar Mandi Dalam', 'tipe' => 'kamar_mandi', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Kamar Mandi Luar', 'tipe' => 'kamar_mandi', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+
+            // Kategori Kamar
+            ['nama' => 'Kamar Kecil', 'tipe' => 'kamar', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'Kamar Besar', 'tipe' => 'kamar', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+
+            // Fasilitas WC
+            ['nama' => 'WC Kecil', 'tipe' => 'kamar_mandi', 'created_at' => $timestamp, 'updated_at' => $timestamp],
+            ['nama' => 'WC Besar', 'tipe' => 'kamar_mandi', 'created_at' => $timestamp, 'updated_at' => $timestamp],
         ]);
     }
 }

@@ -6,6 +6,10 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Unit;
 use App\Models\AlamatUnit;
+use App\Models\FasilitasTipeKamar;
+use App\Models\TipeKamar;
+use App\Models\HargaKamar;
+use App\Models\Fasilitas;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 
@@ -947,6 +951,15 @@ class UnitSeeder extends Seeder
                 }
             }
 
+            // Cari alamat lengkap
+            $alamatLengkap = $data['alamat']; // default
+            foreach ($alamatMapping as $keyword => $alamat) {
+                if (str_contains($namaClusterLower, $keyword)) {
+                    $alamatLengkap = $alamat;
+                    break;
+                }
+            }
+
             Unit::create([
                 'id' => $unitId,
                 'id_owner' => $ownerUuid,
@@ -968,7 +981,7 @@ class UnitSeeder extends Seeder
             // Simpan alamat_unit
             AlamatUnit::create([
                 'unit_id' => $unitId,
-                'alamat' => $data['alamat'],
+                'alamat' => $alamatLengkap,
                 'provinsi' => $provinsi,
                 'kabupaten' => $kabupaten,
                 'kecamatan' => $kecamatan,
