@@ -37,6 +37,7 @@ use Filament\Forms\Set;
 use Closure;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Resources\UnitResource\Pages\RoomLayout;
 
 use function Filament\Forms\getLivewire;
 use Illuminate\Support\Str;
@@ -1169,6 +1170,7 @@ class UnitResource extends Resource
             'create' => Pages\CreateUnit::route('/create'),
             'edit' => Pages\EditUnit::route('/{record}/edit'),
             'view' => Pages\ViewUnit::route('/{record}/view'),
+            'room-layout' => RoomLayout::route('/{record}/room-layout'),
         ];
     }
 

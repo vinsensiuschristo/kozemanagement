@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Unit;
 
 class QuickActionsWidget extends Widget
 {
@@ -101,6 +102,7 @@ class QuickActionsWidget extends Widget
 
         return [
             'actions' => $actions,
+            'isOwner' => $isOwner,
         ];
     }
 }

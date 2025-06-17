@@ -26,6 +26,7 @@ class Unit extends Model
         'nomor_kontrak',
         'tanggal_awal_kontrak',
         'tanggal_akhir_kontrak',
+        'status',
     ];
 
     public function tipeKamars()
