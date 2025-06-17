@@ -22,7 +22,7 @@ class VerifikasiPemasukanResource extends Resource
 {
     protected static ?string $model = Pemasukan::class;
 
-    protected static ?string $navigationGroup = 'Transaksi';
+    protected static ?string $navigationGroup = 'Verifikasi';
     protected static ?string $navigationIcon = 'heroicon-o-check-circle';
     protected static ?string $navigationLabel = 'Verifikasi Pemasukan';
 

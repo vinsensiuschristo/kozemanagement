@@ -28,6 +28,12 @@ class PengeluaranResource extends Resource
     protected static ?string $pluralModelLabel = 'Data Pengeluaran';
     protected static ?string $navigationGroup = 'Keuangan';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->check() && auth()->user()->hasAnyRole(['Owner', 'Superadmin']);
+    }
+
+
     public static function form(Form $form): Form
     {
         return $form->schema([

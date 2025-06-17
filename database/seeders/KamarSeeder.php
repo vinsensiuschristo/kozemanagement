@@ -20,6 +20,25 @@ class KamarSeeder extends Seeder
     public function run(): void
     {
         // Kamar::factory()->count(20)->create();
+        $depositMapping = [
+            'Alesha blue' => 1000000,
+            'Alesha yellow' => 1000000,
+            'Alesha Red' => 500000,
+            'Alesha Orange' => 500000,
+            'Anarta' => 500000,
+            'Taman Bromo' => 1000000,
+            'Allogio' => 1000000,
+            'Piazza' => 1000000,
+            'Regentown' => 1000000,
+            'Studento' => 1000000,
+            'Ruko Pascal' => 1000000,
+            'Tanjung duren' => 1000000,
+            'Bendungan Hillir' => 1000000,
+            'Zena' => 1000000,
+            'Naturale' => 1000000,
+            'Anggrek Loka' => 1000000,
+        ];
+
         $dataKamar = [
             // Alesha Blue
             [
@@ -743,46 +762,59 @@ class KamarSeeder extends Seeder
         foreach ($dataKamar as $kamar) {
             // Cari unit berdasarkan alamat
             $unit = Unit::where('nama_cluster', 'like', '%' . $kamar['alamat'] . '%')->first();
+            if (!$unit) continue;
 
-            if (!$unit) {
-                continue; // Skip jika unit tidak ditemukan
+            // Tentukan nilai deposit berdasarkan nama cluster
+            $deposit = 500000; // default
+            foreach ($depositMapping as $keyword => $value) {
+                if (stripos($unit->nama_cluster, $keyword) !== false) {
+                    $deposit = $value;
+                    break;
+                }
             }
 
-            // Buat tipe kamar
-            $tipeKamar = TipeKamar::create([
-                'id' => Str::uuid(),
-                'unit_id' => $unit->id,
-                'nama_tipe' => $kamar['tipe_kamar'],
-            ]);
+            // Buat atau ambil tipe kamar
+            $tipeKamar = TipeKamar::firstOrCreate(
+                [
+                    'unit_id' => $unit->id,
+                    'nama_tipe' => $kamar['tipe_kamar'],
+                ],
+                [
+                    'id' => Str::uuid(),
+                ]
+            );
 
-            // Buat harga kamar
-            HargaKamar::create([
-                'id' => Str::uuid(),
-                'tipe_kamar_id' => $tipeKamar->id,
-                'harga_perbulan' => $kamar['harga'],
-                'minimal_deposit' => $kamar['harga'] / 2, // Contoh: deposit 2x harga bulanan
-            ]);
+            // Cek apakah harga kamar sudah ada
+            $existingHarga = HargaKamar::where('tipe_kamar_id', $tipeKamar->id)->first();
 
-            // Update unit untuk menandakan multi_tipe jika ada lebih dari 1 tipe
+            if ($existingHarga) {
+                $needsUpdate =
+                    $existingHarga->harga_perbulan != $kamar['harga'] ||
+                    $existingHarga->minimal_deposit != $deposit;
+
+                if ($needsUpdate) {
+                    $existingHarga->update([
+                        'harga_perbulan' => $kamar['harga'],
+                        'minimal_deposit' => $deposit,
+                    ]);
+                }
+            } else {
+                HargaKamar::create([
+                    'id' => Str::uuid(),
+                    'tipe_kamar_id' => $tipeKamar->id,
+                    'harga_perbulan' => $kamar['harga'],
+                    'minimal_deposit' => $deposit,
+                ]);
+            }
+
+            // Update multi_tipe jika perlu
             if (TipeKamar::where('unit_id', $unit->id)->count() > 1) {
                 $unit->update(['multi_tipe' => true]);
             }
 
-            // Update disewakan_untuk jika berbeda dengan default
+            // Update disewakan_untuk
             if ($kamar['disewakan_untuk'] !== 'campur') {
                 $unit->update(['disewakan_untuk' => $kamar['disewakan_untuk']]);
-            }
-
-            // Hubungkan fasilitas dengan tipe kamar
-            foreach ($kamar['fasilitas'] as $namaFasilitas) {
-                $fasilitas = Fasilitas::where('nama', $namaFasilitas)->first();
-
-                if ($fasilitas) {
-                    FasilitasTipeKamar::create([
-                        'tipe_kamar_id' => $tipeKamar->id,
-                        'fasilitas_id' => $fasilitas->id,
-                    ]);
-                }
             }
         }
     }

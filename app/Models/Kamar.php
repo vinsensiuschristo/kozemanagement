@@ -17,7 +17,6 @@ class Kamar extends Model
         'tipe_kamar_id',
         'nama',
         'lantai',
-        'terisi',
         'ukuran',
     ];
 

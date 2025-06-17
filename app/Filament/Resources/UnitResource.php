@@ -38,6 +38,8 @@ use Closure;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\UnitResource\Pages\RoomLayout;
+use App\Filament\Resources\UnitResource\RelationManagers\TipeKamarsRelationManager;
+use Illuminate\Database\Eloquent\Model;
 
 use function Filament\Forms\getLivewire;
 use Illuminate\Support\Str;
@@ -51,10 +53,30 @@ class UnitResource extends Resource
     protected array $fasilitasTerpilih = [];
     protected array $fasilitasKamarsData = [];
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->hasRole(['Superadmin', 'Admin', 'Owner']);
+    }
+
+
     public static function canCreate(): bool
     {
-        $user = Filament::auth()->user();
-        return $user->hasAnyRole(['Superadmin', 'Admin']);
+        return auth()->user()?->hasRole('Superadmin');
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->hasRole(['Superadmin', 'Admin', 'Owner']);
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return auth()->user()?->hasRole('Superadmin');
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return auth()->user()?->hasRole('Superadmin');
     }
 
     public static function getEloquentQuery(): Builder
@@ -1160,7 +1182,9 @@ class UnitResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            TipeKamarsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

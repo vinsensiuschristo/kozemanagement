@@ -34,6 +34,12 @@ class PemasukanResource extends Resource
     protected static ?string $navigationGroup = 'Keuangan';
     protected static ?string $modelLabel = 'Pemasukan';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->check() && auth()->user()->hasAnyRole(['Owner', 'Superadmin']);
+    }
+
+
     public static function form(Form $form): Form
     {
         return $form
