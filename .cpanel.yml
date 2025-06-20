@@ -1,11 +1,22 @@
+# ---
+# deployment:
+#   tasks:
+#     - /bin/sh -c "export COMPOSER_HOME=$HOME/.composer"
+#     - /usr/local/bin/php /usr/local/bin/composer install --no-interaction --no-dev
+#     - /usr/local/bin/php artisan config:cache
+#     - /usr/local/bin/php artisan route:cache
+#     - /usr/local/bin/php artisan view:cache
+#     - /usr/local/bin/php artisan storage:link
+#     - /bin/chmod 755 storage
+#     - /bin/chmod 755 bootstrap/cache
 ---
 deployment:
   tasks:
-    - /bin/sh -c "export COMPOSER_HOME=$HOME/.composer"
+    # Langkah dasar untuk test
     - /usr/local/bin/php /usr/local/bin/composer install --no-interaction --no-dev
-    - /usr/local/bin/php artisan config:cache
-    - /usr/local/bin/php artisan route:cache
-    - /usr/local/bin/php artisan view:cache
-    - /usr/local/bin/php artisan storage:link
-    - /bin/chmod 755 storage
-    - /bin/chmod 755 bootstrap/cache
+    - /usr/local/bin/php artisan config:clear
+    - /usr/local/bin/php artisan view:clear
+    - /bin/chmod 755 storage bootstrap/cache
+    
+    # Buat file test.txt sebagai penanda deploy sukses
+    - /bin/sh -c "echo 'Deploy berhasil pada $(date)' > public/test.txt"
