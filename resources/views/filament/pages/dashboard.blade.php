@@ -49,7 +49,11 @@
             @livewire(\App\Filament\Widgets\TopPerformingUnitsWidget::class)
 
             {{-- Unit Performance Table --}}
-            @livewire(\App\Filament\Widgets\UnitPerformanceWidget::class)
+            @auth
+                @if(auth()->user()->hasRole('Superadmin') || auth()->user()->hasRole('Admin'))
+                    @livewire(\App\Filament\Widgets\UnitPerformanceWidget::class)
+                @endif
+            @endauth
 
             {{-- Quick Actions --}}
             @livewire(\App\Filament\Widgets\QuickActionsWidget::class)

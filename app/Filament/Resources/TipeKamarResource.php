@@ -8,6 +8,7 @@ use App\Models\TipeKamar;
 use App\Filament\Resources\TipeKamarResource\RelationManagers\KamarsRelationManager;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -77,6 +78,30 @@ class TipeKamarResource extends Resource
                     ->label('Nama Tipe')
                     ->required()
                     ->maxLength(255),
+
+                TextInput::make('harga.harga_perbulan')
+                    ->label('Harga Bulanan')
+                    ->prefix('Rp')
+                    ->numeric()
+                    ->nullable(),
+
+                TextInput::make('harga.harga_perminggu')
+                    ->label('Harga Mingguan')
+                    ->prefix('Rp')
+                    ->numeric()
+                    ->nullable(),
+
+                TextInput::make('harga.harga_perhari')
+                    ->label('Harga Harian')
+                    ->prefix('Rp')
+                    ->numeric()
+                    ->nullable(),
+
+                TextInput::make('harga.minimal_deposit')
+                    ->label('Deposit')
+                    ->prefix('Rp')
+                    ->numeric()
+                    ->nullable(),
             ]);
     }
 
@@ -91,6 +116,10 @@ class TipeKamarResource extends Resource
                 Tables\Columns\TextColumn::make('nama_tipe')
                     ->label('Nama Tipe')
                     ->searchable(),
+
+                Tables\Columns\TextColumn::make('harga.harga_perbulan')
+                    ->label('Harga Bulanan')
+                    ->money('IDR', true),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Tanggal Dibuat')

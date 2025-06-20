@@ -8,6 +8,7 @@ use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Support\Number;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Log;
 
 class UnitPerformanceWidget extends BaseWidget
 {
@@ -15,11 +16,27 @@ class UnitPerformanceWidget extends BaseWidget
     protected static ?int $sort = 6;
     protected int | string | array $columnSpan = 'full';
 
+    public static function canView(): bool
+    {
+        $user = auth()->user();
+
+        // Hanya Superadmin dan Admin yang bisa melihat
+        return $user && $user->hasAnyRole(['Superadmin', 'Admin']);
+    }
+
     public function table(Table $table): Table
     {
         return $table
-            ->query(
-                Unit::query()
+            ->query(function () {
+                // Debug 1: Cek user yang login dan role-nya
+                Log::debug('Auth check', [
+                    'user_id' => auth()->id(),
+                    'is_authenticated' => auth()->check(),
+                    'roles' => auth()->check() ? auth()->user()->getRoleNames() : null,
+                    'is_owner' => auth()->check() ? auth()->user()->hasRole('Owner') : false
+                ]);
+
+                $query = Unit::query()
                     ->with(['kamars.ketersediaan', 'alamat', 'owner'])
                     ->withCount([
                         'kamars',
@@ -33,8 +50,30 @@ class UnitPerformanceWidget extends BaseWidget
                                 $query->where('status', 'kosong');
                             });
                         },
-                    ])
-            )
+                    ]);
+
+                // Debug 2: Cek jumlah unit sebelum filter
+                Log::debug('Before filter', [
+                    'total_units' => $query->count()
+                ]);
+
+                // Filter untuk owner
+                if (auth()->check() && auth()->user()->hasRole('Owner')) {
+                    Log::debug('Applying owner filter', [
+                        'owner_id' => auth()->id(),
+                        'units_belonging_to_owner' => Unit::where('id_owner', auth()->id())->count()
+                    ]);
+
+                    $query->where('id_owner', auth()->id());
+                }
+
+                // Debug 3: Cek jumlah unit setelah filter
+                Log::debug('After filter', [
+                    'filtered_units' => $query->count()
+                ]);
+
+                return $query;
+            })
             ->columns([
                 Tables\Columns\TextColumn::make('nama_cluster')
                     ->label('Nama Unit')

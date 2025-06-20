@@ -90,8 +90,6 @@ class UnitResource extends Resource
             ->when(auth()->user()->hasRole('Owner'), fn($q) => $q->where('id_owner', auth()->id()));
     }
 
-
-
     public static function form(Form $form): Form
     {
         return $form->schema([

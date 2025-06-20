@@ -11,23 +11,65 @@ class MigrateKamarDataV2Seeder extends Seeder
 {
     // Daftar mapping khusus tipe kamar
     private $specialTypeMappings = [
-        'Alesha Blue 1-2' => [
+        "00d15533-2c4a-435d-a56e-5703d2eb21d8" => [
             'Wc Kecil' => ['202'],
-            'Wc Besar' => ['101']
+            'Wc Besar' => ['101'],
         ],
-        'Alesha Yellow 6-7' => [
-            'Kamar Besar' => ['101', '201', '301']
+        "d2093cd4-72b0-4560-80b5-0f2ab66f8ece" => [
+            'Kamar Kecil' => ['202', '302'],
+            'Kamar Besar' => ['101', '201', '301'],
         ],
-        'Piazza F10-2' => [
+        "68cc416f-8d4f-428f-9b46-b3e6889df519" => [
             'Balkon depan' => ['201', '301'],
-            'Balkon Belakang' => ['202', '302']
+            'Balkon Belakang' => ['202', '302'],
+            'Tanpa Balkon' => [],
         ],
-        'Piazza F7-7' => [
-            'Tanpa Balkon' => ['101', '102']
+        // Piaza the Mozia F11-1
+        "6727fd56-fa32-43fb-bd43-5fa592411574" => [
+            'Hanya Jendela' => ['101', '102', '201', '202', '301', '302'],
         ],
-        'Studento L19-15-16 (cewe)' => [
-            'Jendela dalem' => ['6', '7']
-        ]
+        // Piaza the Mozia F3-5
+        "adec7989-092b-4314-bfd0-a4507e9c26ed" => [
+            'Balkon Depan' => ['201', '301'],
+            'Balkon Belakang' => ['202', '302'],
+            'Tanpa Balkon' => ['101', '102'],
+        ],
+        // Piaza the Mozia F5-5
+        "0a5b4dc9-32bf-432c-ac23-771c6eb9b944" => [
+            'Balkon Depan' => ['201', '301'],
+            'Balkon Belakang' => ['202', '302'],
+            'Tanpa Balkon' => ['101', '102'],
+        ],
+        "5de3cd8e-bb98-4b3a-b297-8a8d2582f94f" => [
+            'Balkon Depan' => ['201', '301'],
+            'Balkon Belakang' => ['202', '302'],
+            'Tanpa Balkon' => ['101', '102'],
+        ],
+        // Studento L19-15-16 (cewe)
+        "592ff0d9-60ec-47a6-8f67-ac07494d23aa" => [
+            'Jendela Luar' => ['1', '2'],
+            'Jendela Dalam' => ['6', '7'],
+        ],
+        "e54d3124-5f3d-4612-ba7b-29916a90d31f" => [
+            'Jendela Luar' => ['2.3', '2.1'],
+            'Jendela Dalam' => ['2.2', '2.5', '2.6'],
+        ],
+        // Anggrek Loka
+        "4f8e093e-ada0-4b55-b637-25cdedc99dcc" => [
+            'AC Lt 1 & 2 Kamar mandi dalam' => [],
+            'AC Lt 1 & 2 Kamar mandi luar' => [],
+            'AC Lt 3' => [],
+            'Non AC Lt 2' => [],
+            'Non AC Lt 3' => [],
+        ],
+        // Pascal
+        "b994caf8-6bc0-463d-8a65-beab0dc293cd" => [
+            'Kamar mandi luar' => ['201', '202', '203', '301', '302', '303'], // Kamar mandi luar = Tipe kamar private wc
+            'Kamar mandi dalam' => ['204', '205', '304', '305'],
+        ],
+        "0b2c1811-0832-43b1-8f07-a85361108ccf" => [
+            'Khusus Cewe' => ['101', '102', '103', '105', '106', '201', '202', '203', '205', '206', '207', '208', '301', '302', '303', '305', '306', '307', '308'],
+        ],
     ];
 
     public function run()
@@ -35,17 +77,12 @@ class MigrateKamarDataV2Seeder extends Seeder
         try {
             Log::info('Memulai migrasi data kamar');
 
-            // Step 1: Mapping unit
             $this->prosesMappingUnit();
-
-            // Step 2: Buat tipe kamar khusus berdasarkan mapping
             $this->prosesBuatTipeKamarKhusus();
-
-            // Step 3: Buat tipe kamar standar untuk unit yang belum memiliki tipe
             $this->prosesBuatTipeKamarStandar();
-
-            // Step 4: Migrasi kamar dengan mapping yang tepat
             $this->prosesMigrasiKamarDenganTipe();
+
+            $this->updateKamarDenganTipeBaru();
 
             Log::info('Migrasi data kamar selesai');
         } catch (\Exception $e) {
@@ -59,15 +96,13 @@ class MigrateKamarDataV2Seeder extends Seeder
         Log::info('Memulai mapping unit lama ke baru');
 
         DB::transaction(function () {
-            $unitsLama = DB::connection('mysql_lama')
-                ->table('unit')
-                ->get();
+            $unitsLama = DB::connection('mysql_lama')->table('unit')->get();
 
             foreach ($unitsLama as $unit) {
                 $namaCluster = $this->generateNamaCluster($unit->Alamat, $unit->NoUnit);
 
                 $unitBaru = DB::table('units')
-                    ->where('nama_cluster', $namaCluster)
+                    ->whereRaw('LOWER(nama_cluster) = ?', [strtolower($namaCluster)])
                     ->first();
 
                 if ($unitBaru) {
@@ -88,31 +123,29 @@ class MigrateKamarDataV2Seeder extends Seeder
 
     private function prosesBuatTipeKamarKhusus()
     {
-        Log::info('Membuat tipe kamar khusus berdasarkan mapping');
+        Log::info('Membuat tipe kamar khusus berdasarkan mapping UUID');
 
         DB::transaction(function () {
-            foreach ($this->specialTypeMappings as $unitName => $types) {
-                $unit = DB::table('units')
-                    ->where('nama_cluster', 'like', "%{$unitName}%")
-                    ->first();
-
-                if (!$unit) {
-                    Log::warning("Unit khusus tidak ditemukan: {$unitName}");
-                    continue;
-                }
-
+            foreach ($this->specialTypeMappings as $unitId => $types) {
                 foreach ($types as $typeName => $kamars) {
-                    DB::table('tipe_kamars')->updateOrInsert(
-                        [
-                            'unit_id' => $unit->id,
-                            'nama_tipe' => $typeName
-                        ],
-                        [
+                    // Cek apakah tipe kamar sudah ada untuk unit ini
+                    $existing = DB::table('tipe_kamars')
+                        ->where('unit_id', $unitId)
+                        ->where('nama_tipe', $typeName)
+                        ->first();
+
+                    if (!$existing) {
+                        DB::table('tipe_kamars')->insert([
                             'id' => Str::uuid(),
+                            'unit_id' => $unitId,
+                            'nama_tipe' => $typeName,
                             'created_at' => now(),
-                            'updated_at' => now()
-                        ]
-                    );
+                            'updated_at' => now(),
+                        ]);
+                        Log::info("Tipe kamar '{$typeName}' berhasil dibuat untuk unit {$unitId}");
+                    } else {
+                        Log::info("Tipe kamar '{$typeName}' sudah ada untuk unit {$unitId}, dilewati");
+                    }
                 }
             }
         });
@@ -124,9 +157,12 @@ class MigrateKamarDataV2Seeder extends Seeder
 
         DB::transaction(function () {
             $unitsWithoutType = DB::table('units')
-                ->leftJoin('tipe_kamars', 'units.id', '=', 'tipe_kamars.unit_id')
-                ->whereNull('tipe_kamars.id')
-                ->select('units.id', 'units.nama_cluster')
+                ->whereNotExists(function ($query) {
+                    $query->select(DB::raw(1))
+                        ->from('tipe_kamars')
+                        ->whereColumn('tipe_kamars.unit_id', 'units.id');
+                })
+                ->select('id')
                 ->get();
 
             foreach ($unitsWithoutType as $unit) {
@@ -162,30 +198,23 @@ class MigrateKamarDataV2Seeder extends Seeder
 
                         if (!$mapping) {
                             $totalSkipped++;
-                            Log::warning("Unit lama ID {$kamar->ID_Unit} tidak ditemukan mapping-nya");
                             DB::rollBack();
                             continue;
                         }
 
-                        $unit = DB::table('units')
-                            ->where('id', $mapping->new_unit_id)
-                            ->first();
-
-                        if (!$unit) {
-                            $totalSkipped++;
-                            Log::warning("Unit baru ID {$mapping->new_unit_id} tidak ditemukan");
-                            DB::rollBack();
-                            continue;
-                        }
-
-                        // Cari tipe kamar berdasarkan mapping khusus
-                        $tipeKamar = $this->cariTipeKamarYangSesuai($unit->nama_cluster, $kamar->NoKamar, $mapping->new_unit_id);
+                        $tipeKamar = $this->cariTipeKamarByUnitId($mapping->new_unit_id, $kamar->NoKamar);
 
                         if (!$tipeKamar) {
-                            $totalSkipped++;
-                            Log::warning("Tidak ditemukan tipe kamar untuk {$unit->nama_cluster} kamar {$kamar->NoKamar}");
-                            DB::rollBack();
-                            continue;
+                            $tipeKamar = DB::table('tipe_kamars')
+                                ->where('unit_id', $mapping->new_unit_id)
+                                ->where('nama_tipe', 'Standard')
+                                ->first();
+
+                            if (!$tipeKamar) {
+                                $totalSkipped++;
+                                DB::rollBack();
+                                continue;
+                            }
                         }
 
                         DB::table('kamars')->insert([
@@ -207,34 +236,24 @@ class MigrateKamarDataV2Seeder extends Seeder
                         $totalSkipped++;
                     }
                 }
-
                 Log::info("Progress: {$totalMigrated} berhasil, {$totalSkipped} gagal");
             });
-
-        Log::info("Migrasi selesai: {$totalMigrated} kamar berhasil, {$totalSkipped} gagal");
     }
 
-    private function cariTipeKamarYangSesuai($unitName, $noKamar, $unitId)
+    private function cariTipeKamarByUnitId($unitId, $noKamar)
     {
-        // Cek mapping khusus terlebih dahulu
-        foreach ($this->specialTypeMappings as $pattern => $types) {
-            if (str_contains($unitName, $pattern)) {
-                foreach ($types as $typeName => $kamars) {
-                    if (in_array($noKamar, $kamars)) {
-                        return DB::table('tipe_kamars')
-                            ->where('unit_id', $unitId)
-                            ->where('nama_tipe', $typeName)
-                            ->first();
-                    }
-                }
+        if (!isset($this->specialTypeMappings[$unitId])) return null;
+
+        foreach ($this->specialTypeMappings[$unitId] as $tipe => $kamars) {
+            if (in_array($noKamar, $kamars)) {
+                return DB::table('tipe_kamars')
+                    ->where('unit_id', $unitId)
+                    ->where('nama_tipe', $tipe)
+                    ->first();
             }
         }
 
-        // Jika tidak ada mapping khusus, gunakan tipe standar
-        return DB::table('tipe_kamars')
-            ->where('unit_id', $unitId)
-            ->where('nama_tipe', 'Standard')
-            ->first();
+        return null;
     }
 
     private function generateNamaCluster($alamat, $noUnit)
@@ -253,5 +272,44 @@ class MigrateKamarDataV2Seeder extends Seeder
         }
 
         return null;
+    }
+
+    private function updateKamarDenganTipeBaru()
+    {
+        Log::info('Memulai update kamar berdasarkan specialTypeMappings terbaru');
+
+        foreach ($this->specialTypeMappings as $unitId => $tipeKamars) {
+            foreach ($tipeKamars as $tipe => $listNoKamar) {
+                if (empty($listNoKamar)) {
+                    continue;
+                }
+
+                $tipeKamar = DB::table('tipe_kamars')
+                    ->where('unit_id', $unitId)
+                    ->where('nama_tipe', $tipe)
+                    ->first();
+
+                if (!$tipeKamar) {
+                    Log::warning("Tipe kamar '$tipe' tidak ditemukan untuk unit $unitId");
+                    continue;
+                }
+
+                foreach ($listNoKamar as $noKamar) {
+                    $affected = DB::table('kamars')
+                        ->where('unit_id', $unitId)
+                        ->where('nama', $noKamar)
+                        ->update([
+                            'tipe_kamar_id' => $tipeKamar->id,
+                            'updated_at' => now(),
+                        ]);
+
+                    if ($affected === 0) {
+                        Log::warning("Kamar $noKamar tidak ditemukan di unit $unitId untuk update ke tipe $tipe");
+                    }
+                }
+            }
+        }
+
+        Log::info('Update kamar selesai');
     }
 }

@@ -13,6 +13,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Database\Eloquent\Model;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 
 class KamarResource extends Resource
 {
@@ -73,16 +75,46 @@ class KamarResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('tipe_kamar_id')
-                    ->relationship('tipeKamar', 'nama_tipe')
+                Forms\Components\Select::make('unit_id')
+                    ->label('Unit')
+                    ->options(function () {
+                        $query = \App\Models\Unit::query();
+
+                        if (auth()->user()?->hasRole('Owner')) {
+                            $query->where('id_owner', auth()->id());
+                        }
+
+                        return $query->pluck('nama_cluster', 'id');
+                    })
                     ->searchable()
+                    ->reactive()
+                    ->afterStateUpdated(fn(Set $set) => $set('tipe_kamar_id', null))
                     ->required(),
 
+                Forms\Components\Select::make('tipe_kamar_id')
+                    ->label('Tipe Kamar')
+                    ->options(function (Get $get) {
+                        $unitId = $get('unit_id');
+                        if (!$unitId) return [];
+
+                        return \App\Models\TipeKamar::where('unit_id', $unitId)
+                            ->pluck('nama_tipe', 'id');
+                    })
+                    ->required()
+                    ->searchable(),
+
                 Forms\Components\TextInput::make('nama')
+                    ->label('Nama / Nomor Kamar')
                     ->required()
                     ->maxLength(255),
+
+                Forms\Components\TextInput::make('lantai')
+                    ->numeric()
+                    ->minValue(1)
+                    ->required(),
             ]);
     }
+
 
     public static function table(Table $table): Table
     {
@@ -90,7 +122,18 @@ class KamarResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('nama')->label('Nama Kamar')->searchable(),
                 Tables\Columns\TextColumn::make('tipeKamar.nama_tipe')->label('Tipe Kamar')->searchable(),
-                Tables\Columns\TextColumn::make('created_at')->dateTime()->label('Dibuat'),
+                Tables\Columns\TextColumn::make('tipeKamar.unit.nama_cluster')
+                    ->label('Unit')
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\BadgeColumn::make('ketersediaan.status')
+                    ->label('Status')
+                    ->colors([
+                        'success' => 'kosong',
+                        'danger' => 'terisi',
+                        'warning' => 'booked',
+                    ]),
             ])
             ->filters([
                 //
