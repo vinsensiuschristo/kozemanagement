@@ -1,11 +1,11 @@
 ---
 deployment:
   tasks:
-    - export COMPOSER_HOME=$HOME/.composer
-    - /usr/local/bin/php /usr/local/bin/composer install --no-interaction
+    - /bin/sh -c "export COMPOSER_HOME=$HOME/.composer"
+    - /usr/local/bin/php /usr/local/bin/composer install --no-interaction --no-dev
     - /usr/local/bin/php artisan config:cache
     - /usr/local/bin/php artisan route:cache
     - /usr/local/bin/php artisan view:cache
     - /usr/local/bin/php artisan storage:link
-    - /bin/chmod -R 755 storage
-    - /bin/chmod -R 755 bootstrap/cache
+    - /bin/chmod 755 storage
+    - /bin/chmod 755 bootstrap/cache
