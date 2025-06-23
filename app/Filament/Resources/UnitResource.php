@@ -87,7 +87,10 @@ class UnitResource extends Resource
                 'alamat',
                 'kamars.ketersediaan'
             ])
-            ->when(auth()->user()->hasRole('Owner'), fn($q) => $q->where('id_owner', auth()->id()));
+            ->when(auth()->user()->hasRole('Owner'), function ($q) {
+                $ownerId = auth()->user()->owner->id ?? null;
+                return $q->where('id_owner', $ownerId);
+            });
     }
 
     public static function form(Form $form): Form

@@ -54,14 +54,20 @@ class TipeKamarResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with(['unit.owner'])
-            ->when(
-                auth()->user()?->hasRole('Owner'),
-                fn(Builder $query) => $query->whereHas('unit', function ($query) {
-                    $query->where('id_owner', auth()->id());
-                })
-            );
+            ->with(['unit', 'hargaKamars'])
+            ->when(auth()->user()?->hasRole('Owner'), function ($query) {
+                $owner = \App\Models\Owner::where('user_id', auth()->id())->first();
+                if (!$owner) return $query->whereRaw('0=1');
+
+                return $query->whereHas('unit', function ($q) use ($owner) {
+                    $q->where('id_owner', $owner->id)
+                        ->where('status', true);
+                });
+            });
     }
+
+
+
 
 
     public static function form(Form $form): Form
@@ -117,7 +123,7 @@ class TipeKamarResource extends Resource
                     ->label('Nama Tipe')
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('harga.harga_perbulan')
+                Tables\Columns\TextColumn::make('hargaKamars.harga_perbulan')
                     ->label('Harga Bulanan')
                     ->money('IDR', true),
 

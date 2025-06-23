@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use App\Models\Owner;
 
 class KamarResource extends Resource
 {
@@ -41,13 +42,18 @@ class KamarResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with(['tipeKamar.unit.owner'])
-            ->when(
-                auth()->user()?->hasRole('Owner'),
-                fn(Builder $query) => $query->whereHas('tipeKamar.unit', function ($q) {
-                    $q->where('id_owner', auth()->id());
-                })
-            );
+            ->with(['unit']) // jika perlu eager load
+            ->when(auth()->user()?->hasRole('Owner'), function ($query) {
+                $owner = Owner::where('user_id', auth()->id())->first();
+
+                if (!$owner) {
+                    return $query->whereRaw('0=1'); // tidak tampilkan apa pun jika owner tidak ditemukan
+                }
+
+                return $query->whereHas('unit', function ($q) use ($owner) {
+                    $q->where('id_owner', $owner->id)->where('status', true);
+                });
+            });
     }
 
     public static function canCreate(): bool
