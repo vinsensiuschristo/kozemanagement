@@ -40,6 +40,6 @@ class Penghuni extends Model
     // Relasi: Penghuni memiliki banyak log checkin/checkout
     public function logs()
     {
-        return $this->hasMany(LogPenghuni::class);
+        return $this->hasMany(LogPenghuni::class, 'penghuni_id');
     }
 }

@@ -25,6 +25,30 @@ class PenghuniResource extends Resource
     protected static ?string $navigationLabel = 'Data Penghuni';
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery()->with([
+            'logs.kamar.unit',
+        ]);
+
+        if (auth()->user()?->hasRole('Owner')) {
+            $owner = \App\Models\Owner::where('user_id', auth()->id())->first();
+
+            if ($owner) {
+                $query->whereHas('logs.kamar.unit', function ($q) use ($owner) {
+                    $q->where('id_owner', $owner->id)
+                        ->where('status', true); // unit aktif
+                });
+            } else {
+                $query->whereRaw('0=1');
+            }
+        }
+
+        return $query;
+    }
+
+
+
     public static function form(Form $form): Form
     {
         return $form
@@ -96,9 +120,17 @@ class PenghuniResource extends Resource
                 Tables\Columns\TextColumn::make('kode')->searchable(),
                 Tables\Columns\TextColumn::make('nama')->searchable(),
                 Tables\Columns\TextColumn::make('status'),
-            ])
-            ->filters([
-                //
+                Tables\Columns\TextColumn::make('logs.kamar.nama')
+                    ->label('Kamar Terakhir')
+                    ->formatStateUsing(function ($state, $record) {
+                        $logTerakhir = $record->logs()->latest('tanggal')->first();
+                        if (!$logTerakhir) return '-';
+
+                        $unitName = $logTerakhir->kamar?->unit?->nama_cluster ?? '-';
+                        $kamarName = $logTerakhir->kamar?->nama ?? '-';
+
+                        return "{$unitName} - {$kamarName}";
+                    }),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
