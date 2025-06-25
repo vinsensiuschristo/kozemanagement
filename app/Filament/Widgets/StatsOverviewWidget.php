@@ -17,6 +17,12 @@ class StatsOverviewWidget extends BaseWidget
     protected static ?int $sort = 1;
     protected static ?string $pollingInterval = '30s';
 
+    public static function canView(): bool
+    {
+        $user = Auth::user();
+        return $user && !$user->hasRole('Owner');
+    }
+
     protected function getStats(): array
     {
         $user = Auth::user();

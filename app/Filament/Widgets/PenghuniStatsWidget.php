@@ -6,11 +6,18 @@ use App\Models\Penghuni;
 use App\Models\LogPenghuni;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\Auth;
 
 class PenghuniStatsWidget extends BaseWidget
 {
     protected static ?int $sort = 3;
     protected static ?string $pollingInterval = '60s';
+
+    public static function canView(): bool
+    {
+        $user = Auth::user();
+        return $user && !$user->hasRole('Owner');
+    }
 
     protected function getStats(): array
     {

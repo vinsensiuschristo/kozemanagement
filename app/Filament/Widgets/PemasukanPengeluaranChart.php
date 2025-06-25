@@ -18,6 +18,12 @@ class PemasukanPengeluaranChart extends ChartWidget
 
     public ?string $filter = '6_months';
 
+    public static function canView(): bool
+    {
+        $user = Auth::user();
+        return !$user->hasRole('Owner');
+    }
+
     protected function getFilters(): ?array
     {
         return [

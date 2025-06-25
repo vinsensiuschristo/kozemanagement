@@ -25,19 +25,54 @@ class PenghuniResource extends Resource
     protected static ?string $navigationLabel = 'Data Penghuni';
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
+    // QUERY BARU
+    // public static function getEloquentQuery(): Builder
+    // {
+    //     $query = parent::getEloquentQuery()
+    //         ->with(['logs.kamar.unit']) // eager load relasi
+    //         ->where('status', 'In'); // status dari table penghuni
+
+    //     if (auth()->user()?->hasRole('Owner')) {
+    //         $owner = \App\Models\Owner::where('user_id', auth()->id())->first();
+
+    //         if ($owner) {
+    //             $query->whereHas('logs', function ($logQuery) use ($owner) {
+    //                 $logQuery->where('status', 'checkin')
+    //                     ->whereHas('kamar.unit', function ($unitQuery) use ($owner) {
+    //                         $unitQuery->where('id_owner', $owner->id)
+    //                             ->where('status', true); // hanya unit aktif
+    //                     })
+    //                     ->whereIn('id', function ($subQuery) {
+    //                         // subquery untuk ambil log terbaru per penghuni
+    //                         $subQuery->selectRaw('MAX(id)')
+    //                             ->from('log_penghunis')
+    //                             ->groupBy('penghuni_id');
+    //                     });
+    //             });
+    //         } else {
+    //             $query->whereRaw('0=1');
+    //         }
+    //     }
+
+    //     return $query;
+    // }
+
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->with([
-            'logs.kamar.unit',
-        ]);
+        $query = parent::getEloquentQuery()
+            ->with(['logs.kamar.unit'])
+            ->where('status', 'In'); // hanya penghuni yang masih menempati kamar
 
         if (auth()->user()?->hasRole('Owner')) {
             $owner = \App\Models\Owner::where('user_id', auth()->id())->first();
 
             if ($owner) {
-                $query->whereHas('logs.kamar.unit', function ($q) use ($owner) {
-                    $q->where('id_owner', $owner->id)
-                        ->where('status', true); // unit aktif
+                $query->whereHas('logs', function ($q) use ($owner) {
+                    $q->where('status', 'checkin') // log terakhir harus checkin
+                        ->whereHas('kamar.unit', function ($q2) use ($owner) {
+                            $q2->where('id_owner', $owner->id)
+                                ->where('status', true); // unit aktif
+                        });
                 });
             } else {
                 $query->whereRaw('0=1');
@@ -46,7 +81,6 @@ class PenghuniResource extends Resource
 
         return $query;
     }
-
 
 
     public static function form(Form $form): Form
@@ -134,9 +168,12 @@ class PenghuniResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn() => auth()->user()->hasRole('Superadmin')),
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn() => auth()->user()->hasRole('Superadmin')),
             ])
+
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),

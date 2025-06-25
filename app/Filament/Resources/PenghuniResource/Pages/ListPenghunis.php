@@ -19,16 +19,16 @@ class ListPenghunis extends ListRecords
         ];
     }
 
-    public function getTabs(): array
-    {
-        return [
-            'Semua' => Tab::make(),
+    // public function getTabs(): array
+    // {
+    //     return [
+    //         'Semua' => Tab::make(),
 
-            'Sedang Mengisi Kamar' => Tab::make()
-                ->modifyQueryUsing(
-                    fn(Builder $query) =>
-                    $query->where('status', 'In') // hanya penghuni yang status-nya In
-                ),
-        ];
-    }
+    //         'Sedang Mengisi Kamar' => Tab::make()
+    //             ->modifyQueryUsing(
+    //                 fn(Builder $query) =>
+    //                 $query->where('status', 'In') // hanya penghuni yang status-nya In
+    //             ),
+    //     ];
+    // }
 }

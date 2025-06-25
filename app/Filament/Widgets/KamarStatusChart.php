@@ -13,6 +13,13 @@ class KamarStatusChart extends ChartWidget
     protected static ?string $description = 'Distribusi ketersediaan kamar';
     protected static ?int $sort = 3;
     protected static ?string $pollingInterval = '30s';
+    protected int | string | array $columnSpan = 1;
+
+    public static function canView(): bool
+    {
+        $user = Auth::user();
+        return !$user->hasRole('Owner');
+    }
 
     protected function getData(): array
     {
@@ -41,15 +48,19 @@ class KamarStatusChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Status Kamar',
+                    'label' => 'Jumlah Kamar',
                     'data' => [$kosong, $terisi, $booked],
                     'backgroundColor' => [
-                        'rgb(34, 197, 94)',   // Green untuk kosong
-                        'rgb(239, 68, 68)',   // Red untuk terisi
-                        'rgb(245, 158, 11)',  // Yellow untuk booked
+                        '#10b981', // emerald-500 untuk tersedia
+                        '#ef4444', // red-500 untuk terisi
+                        '#f59e0b', // amber-500 untuk booked
                     ],
-                    'borderWidth' => 0,
-                    'hoverOffset' => 4,
+                    'borderColor' => [
+                        '#059669', // emerald-600
+                        '#dc2626', // red-600
+                        '#d97706', // amber-600
+                    ],
+                    'borderWidth' => 1,
                 ],
             ],
             'labels' => ['Tersedia', 'Terisi', 'Dipesan'],
@@ -58,7 +69,7 @@ class KamarStatusChart extends ChartWidget
 
     protected function getType(): string
     {
-        return 'doughnut';
+        return 'bar';
     }
 
     protected function getOptions(): array
@@ -68,19 +79,22 @@ class KamarStatusChart extends ChartWidget
             'maintainAspectRatio' => false,
             'plugins' => [
                 'legend' => [
-                    'position' => 'bottom',
-                    'labels' => [
-                        'usePointStyle' => true,
-                        'padding' => 15,
-                    ],
-                ],
-                'tooltip' => [
-                    'backgroundColor' => 'rgba(0, 0, 0, 0.8)',
-                    'titleColor' => 'white',
-                    'bodyColor' => 'white',
+                    'display' => false,
                 ],
             ],
-            'cutout' => '60%',
+            'scales' => [
+                'y' => [
+                    'beginAtZero' => true,
+                    'ticks' => [
+                        'stepSize' => 1,
+                    ],
+                ],
+                'x' => [
+                    'grid' => [
+                        'display' => false,
+                    ],
+                ],
+            ],
         ];
     }
 }

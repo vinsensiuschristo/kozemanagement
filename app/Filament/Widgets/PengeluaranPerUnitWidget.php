@@ -8,12 +8,19 @@ use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Carbon\Carbon;
 use Illuminate\Support\Number;
+use Illuminate\Support\Facades\Auth;
 
 class PengeluaranPerUnitWidget extends BaseWidget
 {
     protected static ?string $heading = 'Pengeluaran per Unit';
     protected static ?int $sort = 5;
     protected int | string | array $columnSpan = 'full';
+
+    public static function canView(): bool
+    {
+        $user = Auth::user();
+        return $user && !$user->hasRole('Owner');
+    }
 
     public function table(Table $table): Table
     {

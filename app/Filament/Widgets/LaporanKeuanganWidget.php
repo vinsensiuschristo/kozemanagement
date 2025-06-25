@@ -6,175 +6,83 @@ use App\Models\Pemasukan;
 use App\Models\Pengeluaran;
 use App\Models\Unit;
 use Filament\Widgets\ChartWidget;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\DatePicker;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class LaporanKeuanganWidget extends ChartWidget
 {
-    protected static ?string $heading = 'Laporan Keuangan Detail';
-    protected static ?string $description = 'Analisis keuangan mendalam per unit dan periode';
-    protected static ?int $sort = 7;
-    protected int | string | array $columnSpan = 'full';
+    protected static ?string $heading = 'Laporan Keuangan Bulanan';
+    protected static ?int $sort = 5;
+    protected static ?string $pollingInterval = '60s';
 
-    public ?string $unitFilter = 'all';
-    public ?string $startDate = null;
-    public ?string $endDate = null;
-
-    public function getFilterFormSchema(): array
+    public static function canView(): bool
     {
-        return [
-            Select::make('unitFilter')
-                ->label('Filter Unit')
-                ->options([
-                    'all' => 'Semua Unit',
-                    ...Unit::pluck('nama_cluster', 'id')->toArray()
-                ])
-                ->default('all')
-                ->reactive(),
-
-            DatePicker::make('startDate')
-                ->label('Tanggal Mulai')
-                ->default(now()->subMonths(3))
-                ->reactive(),
-
-            DatePicker::make('endDate')
-                ->label('Tanggal Akhir')
-                ->default(now())
-                ->reactive(),
-        ];
+        $user = Auth::user();
+        return $user->hasRole('Superadmin') || $user->hasRole('Admin');
     }
 
     protected function getData(): array
     {
-        $startDate = $this->startDate ? Carbon::parse($this->startDate) : now()->subMonths(3);
-        $endDate = $this->endDate ? Carbon::parse($this->endDate) : now();
+        $user = Auth::user();
+        $isOwner = $user->hasRole('Owner');
 
-        $period = $startDate->diffInDays($endDate);
-        $groupBy = $period > 90 ? 'month' : 'week';
+        // Get last 6 months
+        $months = collect(range(5, 0))->map(function ($monthsBack) {
+            return now()->subMonths($monthsBack);
+        });
 
-        $labels = [];
-        $pemasukanData = [];
-        $pengeluaranData = [];
-        $profitData = [];
+        $pemasukan = [];
+        $pengeluaran = [];
 
-        if ($groupBy === 'month') {
-            $current = $startDate->copy()->startOfMonth();
-            while ($current <= $endDate) {
-                $labels[] = $current->format('M Y');
+        foreach ($months as $month) {
+            if ($isOwner) {
+                $unitIds = Unit::where('id_owner', $user->owner?->id)->pluck('id');
 
-                $pemasukan = $this->getPemasukanByPeriod($current, $current->copy()->endOfMonth());
-                $pengeluaran = $this->getPengeluaranByPeriod($current, $current->copy()->endOfMonth());
+                $pemasukanBulan = Pemasukan::whereIn('unit_id', $unitIds)
+                    ->whereMonth('tanggal', $month->month)
+                    ->whereYear('tanggal', $month->year)
+                    ->sum('jumlah');
 
-                $pemasukanData[] = $pemasukan;
-                $pengeluaranData[] = $pengeluaran;
-                $profitData[] = $pemasukan - $pengeluaran;
+                $pengeluaranBulan = Pengeluaran::whereIn('unit_id', $unitIds)
+                    ->whereMonth('tanggal', $month->month)
+                    ->whereYear('tanggal', $month->year)
+                    ->sum('jumlah');
+            } else {
+                $pemasukanBulan = Pemasukan::whereMonth('tanggal', $month->month)
+                    ->whereYear('tanggal', $month->year)
+                    ->sum('jumlah');
 
-                $current->addMonth();
+                $pengeluaranBulan = Pengeluaran::whereMonth('tanggal', $month->month)
+                    ->whereYear('tanggal', $month->year)
+                    ->sum('jumlah');
             }
-        } else {
-            $current = $startDate->copy()->startOfWeek();
-            while ($current <= $endDate) {
-                $labels[] = $current->format('d M');
 
-                $pemasukan = $this->getPemasukanByPeriod($current, $current->copy()->endOfWeek());
-                $pengeluaran = $this->getPengeluaranByPeriod($current, $current->copy()->endOfWeek());
-
-                $pemasukanData[] = $pemasukan;
-                $pengeluaranData[] = $pengeluaran;
-                $profitData[] = $pemasukan - $pengeluaran;
-
-                $current->addWeek();
-            }
+            $pemasukan[] = $pemasukanBulan;
+            $pengeluaran[] = $pengeluaranBulan;
         }
 
         return [
             'datasets' => [
                 [
                     'label' => 'Pemasukan',
-                    'data' => $pemasukanData,
-                    'backgroundColor' => 'rgba(34, 197, 94, 0.8)',
-                    'borderColor' => 'rgb(34, 197, 94)',
-                    'borderWidth' => 2,
-                    'type' => 'bar',
+                    'data' => $pemasukan,
+                    'borderColor' => '#10b981',
+                    'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
+                    'fill' => true,
                 ],
                 [
                     'label' => 'Pengeluaran',
-                    'data' => $pengeluaranData,
-                    'backgroundColor' => 'rgba(239, 68, 68, 0.8)',
-                    'borderColor' => 'rgb(239, 68, 68)',
-                    'borderWidth' => 2,
-                    'type' => 'bar',
-                ],
-                [
-                    'label' => 'Profit/Loss',
-                    'data' => $profitData,
-                    'borderColor' => 'rgb(59, 130, 246)',
-                    'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
-                    'borderWidth' => 3,
-                    'type' => 'line',
+                    'data' => $pengeluaran,
+                    'borderColor' => '#ef4444',
+                    'backgroundColor' => 'rgba(239, 68, 68, 0.1)',
                     'fill' => true,
-                    'tension' => 0.4,
                 ],
             ],
-            'labels' => $labels,
+            'labels' => $months->map(fn($month) => $month->format('M Y'))->toArray(),
         ];
-    }
-
-    private function getPemasukanByPeriod($start, $end)
-    {
-        $query = Pemasukan::whereBetween('tanggal', [$start, $end]);
-
-        if ($this->unitFilter !== 'all') {
-            $query->where('unit_id', $this->unitFilter);
-        }
-
-        return $query->sum('jumlah');
-    }
-
-    private function getPengeluaranByPeriod($start, $end)
-    {
-        $query = Pengeluaran::whereBetween('tanggal', [$start, $end]);
-
-        if ($this->unitFilter !== 'all') {
-            $query->where('unit_id', $this->unitFilter);
-        }
-
-        return $query->sum('jumlah');
     }
 
     protected function getType(): string
     {
-        return 'bar';
-    }
-
-    protected function getOptions(): array
-    {
-        return [
-            'responsive' => true,
-            'maintainAspectRatio' => false,
-            'interaction' => [
-                'mode' => 'index',
-                'intersect' => false,
-            ],
-            'scales' => [
-                'y' => [
-                    'beginAtZero' => true,
-                    'ticks' => [
-                        'callback' => 'function(value) { return "Rp " + value.toLocaleString("id-ID"); }',
-                    ],
-                ],
-            ],
-            'plugins' => [
-                'tooltip' => [
-                    'callbacks' => [
-                        'label' => 'function(context) { return context.dataset.label + ": Rp " + context.parsed.y.toLocaleString("id-ID"); }',
-                    ],
-                ],
-                'legend' => [
-                    'position' => 'top',
-                ],
-            ],
-        ];
+        return 'line';
     }
 }

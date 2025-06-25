@@ -9,10 +9,17 @@ use Illuminate\Support\Facades\Auth;
 
 class HunianPerTipeChart extends ChartWidget
 {
-    protected static ?string $heading = 'Hunian per Tipe Kamar';
-    protected static ?string $description = 'Perbandingan tingkat hunian setiap tipe';
-    protected static ?int $sort = 3;
+    protected static ?string $heading = 'Tingkat Hunian per Tipe Kamar';
+    protected static ?string $description = 'Persentase hunian setiap tipe kamar';
+    protected static ?int $sort = 4;
     protected static ?string $pollingInterval = '60s';
+    protected int | string | array $columnSpan = 1;
+
+    public static function canView(): bool
+    {
+        $user = Auth::user();
+        return !$user->hasRole('Owner');
+    }
 
     protected function getData(): array
     {
@@ -29,42 +36,37 @@ class HunianPerTipeChart extends ChartWidget
         }
 
         $labels = [];
-        $dataKosong = [];
-        $dataTerisi = [];
-        $dataBooked = [];
+        $dataHunian = [];
+        $backgroundColors = [];
 
         foreach ($tipeKamars as $tipe) {
-            $labels[] = $tipe->nama_tipe;
-            $dataKosong[] = $tipe->ketersediaanKamars->where('status', 'kosong')->count();
-            $dataTerisi[] = $tipe->ketersediaanKamars->where('status', 'terisi')->count();
-            $dataBooked[] = $tipe->ketersediaanKamars->where('status', 'booked')->count();
+            $totalKamar = $tipe->ketersediaanKamars->count();
+            $kamarTerisi = $tipe->ketersediaanKamars->where('status', 'terisi')->count();
+
+            if ($totalKamar > 0) {
+                $persentaseHunian = round(($kamarTerisi / $totalKamar) * 100, 1);
+                $labels[] = $tipe->nama_tipe . " ({$kamarTerisi}/{$totalKamar})";
+                $dataHunian[] = $persentaseHunian;
+
+                // Warna berdasarkan tingkat hunian
+                if ($persentaseHunian >= 80) {
+                    $backgroundColors[] = '#10b981'; // hijau - bagus
+                } elseif ($persentaseHunian >= 50) {
+                    $backgroundColors[] = '#f59e0b'; // kuning - sedang
+                } else {
+                    $backgroundColors[] = '#ef4444'; // merah - rendah
+                }
+            }
         }
 
         return [
             'datasets' => [
                 [
-                    'label' => 'Tersedia',
-                    'data' => $dataKosong,
-                    'backgroundColor' => 'rgba(34, 197, 94, 0.8)',
-                    'borderColor' => 'rgb(34, 197, 94)',
-                    'borderWidth' => 2,
-                    'borderRadius' => 4,
-                ],
-                [
-                    'label' => 'Terisi',
-                    'data' => $dataTerisi,
-                    'backgroundColor' => 'rgba(239, 68, 68, 0.8)',
-                    'borderColor' => 'rgb(239, 68, 68)',
-                    'borderWidth' => 2,
-                    'borderRadius' => 4,
-                ],
-                [
-                    'label' => 'Dipesan',
-                    'data' => $dataBooked,
-                    'backgroundColor' => 'rgba(245, 158, 11, 0.8)',
-                    'borderColor' => 'rgb(245, 158, 11)',
-                    'borderWidth' => 2,
-                    'borderRadius' => 4,
+                    'label' => 'Tingkat Hunian (%)',
+                    'data' => $dataHunian,
+                    'backgroundColor' => $backgroundColors,
+                    'borderColor' => $backgroundColors,
+                    'borderWidth' => 1,
                 ],
             ],
             'labels' => $labels,
@@ -81,53 +83,30 @@ class HunianPerTipeChart extends ChartWidget
         return [
             'responsive' => true,
             'maintainAspectRatio' => false,
+            'indexAxis' => 'y', // Horizontal bar chart
+            'plugins' => [
+                'legend' => [
+                    'display' => false,
+                ],
+                'tooltip' => [
+                    'callbacks' => [
+                        'label' => 'function(context) { return context.parsed.x + "%"; }',
+                    ],
+                ],
+            ],
             'scales' => [
                 'x' => [
-                    'stacked' => true,
-                    'grid' => [
-                        'display' => false,
-                    ],
+                    'beginAtZero' => true,
+                    'max' => 100,
                     'ticks' => [
-                        'font' => [
-                            'size' => 11,
-                            'weight' => 'bold',
-                        ],
+                        'callback' => 'function(value) { return value + "%"; }',
                     ],
                 ],
                 'y' => [
-                    'stacked' => true,
-                    'beginAtZero' => true,
                     'grid' => [
-                        'color' => 'rgba(0, 0, 0, 0.1)',
-                    ],
-                    'ticks' => [
-                        'font' => [
-                            'size' => 11,
-                        ],
+                        'display' => false,
                     ],
                 ],
-            ],
-            'plugins' => [
-                'legend' => [
-                    'position' => 'top',
-                    'labels' => [
-                        'usePointStyle' => true,
-                        'padding' => 20,
-                        'font' => [
-                            'size' => 12,
-                            'weight' => 'bold',
-                        ],
-                    ],
-                ],
-                'tooltip' => [
-                    'backgroundColor' => 'rgba(0, 0, 0, 0.8)',
-                    'titleColor' => 'white',
-                    'bodyColor' => 'white',
-                ],
-            ],
-            'animation' => [
-                'duration' => 1000,
-                'easing' => 'easeInOutQuart',
             ],
         ];
     }

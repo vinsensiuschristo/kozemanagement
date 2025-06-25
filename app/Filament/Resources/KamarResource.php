@@ -126,7 +126,10 @@ class KamarResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('nama')->label('Nama Kamar')->searchable(),
+                Tables\Columns\TextColumn::make('nama')
+                    ->label('Nama Kamar')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('tipeKamar.nama_tipe')->label('Tipe Kamar')->searchable(),
                 Tables\Columns\TextColumn::make('tipeKamar.unit.nama_cluster')
                     ->label('Unit')
@@ -141,13 +144,17 @@ class KamarResource extends Resource
                         'warning' => 'booked',
                     ]),
             ])
+            ->defaultSort('nama')
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn() => auth()->user()->hasRole('Superadmin')),
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn() => auth()->user()->hasRole('Superadmin')),
             ])
+
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),

@@ -2,44 +2,48 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Page;
+use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
-class Dashboard extends Page
+class Dashboard extends BaseDashboard
 {
-    protected static ?string $navigationIcon = 'heroicon-o-home';
-    protected static string $view = 'filament.pages.dashboard';
-
-    public $role;
-    public $user;
-    public $ownerData;
-
     public function mount(): void
     {
-        $this->user = Auth::user();
-        $this->role = $this->user->getRoleNames()->first();
+        $user = Auth::user();
 
-        // Jika owner, ambil data owner
-        if ($this->role === 'Owner') {
-            $this->ownerData = $this->user->owner;
+        // Debug: Log user info
+        Log::info('Dashboard mount - User ID: ' . ($user?->id ?? 'null'));
+        Log::info('Dashboard mount - User roles: ' . ($user ? $user->getRoleNames()->toJson() : 'no user'));
+
+        if ($user && $user->hasRole('Owner')) {
+            Log::info('Dashboard mount - User is Owner, loading owner data');
+            $this->loadOwnerData();
         }
     }
 
-    public function getTitle(): string
+    protected function loadOwnerData()
     {
-        return match ($this->role) {
-            'Superadmin' => '🚀 Dashboard Superadmin',
-            'Owner' => '🏢 Dashboard Owner - ' . ($this->ownerData?->nama ?? 'Owner'),
-            default => '📊 Dashboard Koze Management'
-        };
+        $user = Auth::user();
+        $ownerData = $user->owner ?? null;
+
+        Log::info('Dashboard loadOwnerData - Owner data: ' . ($ownerData ? 'exists' : 'null'));
+
+        $this->ownerData = $ownerData;
     }
 
-    public function getSubheading(): ?string
+    protected function getViewData(): array
     {
-        return match ($this->role) {
-            'Superadmin' => 'Kelola seluruh sistem manajemen kos',
-            'Owner' => 'Kelola unit kos Anda dengan mudah dan efisien',
-            default => 'Sistem manajemen kos terpadu'
-        };
+        $user = Auth::user();
+        $data = [
+            'role' => $user ? ($user->hasRole('Owner') ? 'owner' : 'admin') : 'guest',
+            'ownerData' => $this->ownerData ?? null,
+        ];
+
+        Log::info('Dashboard getViewData: ' . json_encode($data));
+
+        return $data;
     }
+
+    public $ownerData = null;
 }
