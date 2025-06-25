@@ -40,6 +40,10 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'filament' => [  // Tambahkan guard khusus Filament
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
     ],
 
     /*

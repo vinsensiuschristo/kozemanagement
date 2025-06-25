@@ -18,6 +18,8 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
+use App\Filament\Pages\Auth\CustomPasswordResetRequest;
+use App\Filament\Pages\Auth\RequestPasswordReset;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -28,6 +30,9 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->passwordReset(RequestPasswordReset::class) // Gunakan custom password reset request
+            ->authGuard('web')
+            ->authPasswordBroker('users') // Gunakan broker yang sama
             ->when(
                 auth()->check() && auth()->user()->hasRole('Superadmin'),
                 fn($panel) => $panel->plugin(FilamentSpatieRolesPermissionsPlugin::make())
