@@ -2,6 +2,7 @@
     @php
         $user = auth()->user();
         $isOwner = $user && $user->hasRole('Owner');
+        $isSuperadmin = $user && $user->hasRole('Superadmin');
         $isAdmin = $user && ($user->hasRole('Superadmin') || $user->hasRole('Admin'));
     @endphp
 
@@ -45,7 +46,9 @@
             {{-- Admin/Superadmin Dashboard --}}
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Dashboard Admin</h1>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                        Dashboard {{ $isSuperadmin ? 'Superadmin' : 'Admin' }}
+                    </h1>
                     <p class="text-sm text-gray-600 dark:text-gray-400">Welcome back, {{ auth()->user()->name ?? 'Admin' }}</p>
                 </div>
                 <div class="flex items-center gap-4">
@@ -55,28 +58,20 @@
                 </div>
             </div>
 
+            {{-- Stats Overview --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 @livewire('app.filament.widgets.stats-overview-widget')
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                    @livewire('app.filament.widgets.pemasukan-pengeluaran-chart')
-                </div>
-                <div>
-                    @livewire('app.filament.widgets.kamar-status-chart')
-                </div>
-            </div>
+            {{-- Superadmin Units Widget --}}
+            @if($isSuperadmin)
+                @livewire('app.filament.widgets.superadmin-units-widget')
+            @endif
 
-            <div>
-                @livewire('app.filament.widgets.hunian-per-tipe-chart')
-            </div>
-
+            {{-- Performance Tables --}}
             @livewire('app.filament.widgets.top-performing-units-widget')
 
             @livewire('app.filament.widgets.unit-performance-widget')
-
-            @livewire('app.filament.widgets.quick-actions-widget')
 
         @else
             {{-- No Role or Unknown Role --}}

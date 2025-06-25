@@ -14,12 +14,12 @@ class TopPerformingUnitsWidget extends BaseWidget
     protected static ?string $heading = 'Kos dengan Hunian Tertinggi';
     protected static ?int $sort = 4;
     protected int | string | array $columnSpan = 'full';
-    protected static ?string $pollingInterval = '60s';
+    protected static ?string $pollingInterval = '120s';
 
     public function table(Table $table): Table
     {
         $user = Auth::user();
-        $isOwner = $user->hasRole('Owner');
+        $isOwner = $user->hasRole('owner');
 
         $query = Unit::query()
             ->with(['kamars.ketersediaan', 'alamat', 'owner'])

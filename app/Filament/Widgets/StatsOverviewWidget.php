@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class StatsOverviewWidget extends BaseWidget
 {
     protected static ?int $sort = 1;
-    protected static ?string $pollingInterval = '30s';
+    protected static ?string $pollingInterval = '120s';
 
     public static function canView(): bool
     {

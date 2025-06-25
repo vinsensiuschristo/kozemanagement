@@ -14,7 +14,8 @@ class PemasukanPengeluaranChart extends ChartWidget
     protected static ?string $heading = 'Analisis Keuangan';
     protected static ?string $description = 'Perbandingan pemasukan dan pengeluaran';
     protected static ?int $sort = 2;
-    protected static ?string $pollingInterval = '60s';
+    protected static ?string $pollingInterval = '120s';
+    protected int | string | array $columnSpan = 'full';
 
     public ?string $filter = '6_months';
 

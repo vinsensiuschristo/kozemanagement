@@ -3,12 +3,61 @@
         <x-slot name="heading">
             <div class="flex items-center gap-2">
                 <x-heroicon-o-building-office-2 class="h-5 w-5 text-gray-500" />
-                Unit Kos Saya
+                Manajemen Unit Kos
             </div>
         </x-slot>
 
-        <div class="space-y-4">
-            @forelse($units as $unit)
+        <div class="space-y-6">
+            <!-- Search and Select Section -->
+            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Search Input -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Cari Unit Kos
+                        </label>
+                        <input 
+                            type="text" 
+                            wire:model.live="searchTerm"
+                            placeholder="Cari berdasarkan nama unit atau owner..."
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                        />
+                    </div>
+
+                    <!-- Unit Selector -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Pilih Unit Kos
+                        </label>
+                        <select 
+                            wire:model.live="selectedUnitId"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                        >
+                            <option value="">-- Pilih Unit Kos --</option>
+                            @foreach($allUnits as $unit)
+                                <option value="{{ $unit['value'] }}">{{ $unit['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                @if($selectedUnit)
+                    <div class="mt-4 flex items-center justify-between">
+                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                            Unit dipilih: <span class="font-semibold">{{ $selectedUnit['nama'] }}</span>
+                        </div>
+                        <button 
+                            wire:click="viewUnitLayout"
+                            class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
+                        >
+                            Lihat Layout Lengkap
+                        </button>
+                    </div>
+                @endif
+            </div>
+
+            <!-- Selected Unit Display -->
+            @if($selectedUnit)
                 <x-filament::card class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     <div class="space-y-4">
                         <!-- Unit Info dan Room Status dalam satu baris -->
@@ -16,27 +65,30 @@
                             <!-- Unit Info (Kiri) -->
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-2 mb-1">
-                                    <h3 class="font-semibold text-gray-900 dark:text-white truncate cursor-pointer hover:text-primary-600 transition-colors"
-                                        onclick="window.location.href='/admin/units/{{ $unit['id'] }}/room-layout'">
-                                        {{ $unit['nama'] }}
+                                    <h3 class="font-semibold text-gray-900 dark:text-white truncate">
+                                        {{ $selectedUnit['nama'] }}
                                     </h3>
                                 </div>
                                 
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1 truncate">
+                                    {{ $selectedUnit['alamat'] }}
+                                </p>
+                                
                                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-2 truncate">
-                                    {{ $unit['alamat'] }}
+                                    Owner: {{ $selectedUnit['owner'] }}
                                 </p>
                                 
                                 <div class="flex flex-wrap items-center gap-3 text-xs">
                                     <x-filament::badge color="gray">
-                                        Total: {{ $unit['total_rooms'] }} kamar
+                                        Total: {{ $selectedUnit['total_rooms'] }} kamar
                                     </x-filament::badge>
                                     
                                     <x-filament::badge color="success">
-                                        Tersedia: {{ $unit['available_rooms'] }}
+                                        Tersedia: {{ $selectedUnit['available_rooms'] }}
                                     </x-filament::badge>
                                     
                                     <x-filament::badge color="danger">
-                                        Terisi: {{ $unit['occupied_rooms'] }}
+                                        Terisi: {{ $selectedUnit['occupied_rooms'] }}
                                     </x-filament::badge>
                                 </div>
                             </div>
@@ -44,13 +96,13 @@
                             <!-- Room Status (Kanan) -->
                             <div class="ml-4 flex-shrink-0">
                                 <div class="flex flex-wrap gap-2 justify-end">
-                                    @forelse($unit['rooms'] as $room)
+                                    @forelse($selectedUnit['rooms'] as $room)
                                         <x-filament::badge 
                                             :color="$room['status'] === 'terisi' ? 'danger' : 'success'"
                                             size="sm"
                                             class="px-3 py-2 cursor-pointer hover:scale-105 transition-transform text-xs font-medium"
                                             :tooltip="'Kamar ' . $room['nama'] . ' - ' . ucfirst($room['status']) . ($room['status'] === 'terisi' && $room['penghuni'] ? ' - ' . $room['penghuni']['nama'] : '')"
-                                            wire:click.stop="showRoomDetail({{ $unit['id'] }}, '{{ $room['nama'] }}')">
+                                            wire:click.stop="showRoomDetail('{{ $room['nama'] }}')">
                                             {{ $room['nama'] }}
                                         </x-filament::badge>
                                     @empty
@@ -72,25 +124,25 @@
                                     <span>Terisi</span>
                                 </div>
                                 <div class="text-gray-400">
-                                    Klik nama kamar untuk detail
+                                    Klik nama kamar untuk detail penghuni
                                 </div>
                             </div>
                         </div>
                     </div>
                 </x-filament::card>
-            @empty
+            @else
                 <x-filament::card>
                     <div class="text-center py-8">
-                        <x-heroicon-o-building-office-2 class="mx-auto h-12 w-12 text-gray-400" />
+                        <x-heroicon-o-magnifying-glass class="mx-auto h-12 w-12 text-gray-400" />
                         <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-                            Tidak ada unit
+                            Pilih Unit Kos
                         </h3>
                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                            Anda belum memiliki unit kos yang terdaftar.
+                            Gunakan pencarian atau dropdown untuk memilih unit kos yang ingin dilihat.
                         </p>
                     </div>
                 </x-filament::card>
-            @endforelse
+            @endif
         </div>
     </x-filament::section>
 
