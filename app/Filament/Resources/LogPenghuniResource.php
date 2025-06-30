@@ -161,7 +161,7 @@ class LogPenghuniResource extends Resource
             ], layout: FiltersLayout::AboveContent) // Mengubah ke dropdown di pojok kanan
             ->filtersFormColumns(2) // Jumlah kolom untuk form filter
             ->modifyQueryUsing(function ($query) {
-                return $query;
+                return $query->orderByDesc('tanggal');
             });
     }
 

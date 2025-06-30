@@ -30,9 +30,7 @@
             @livewire('app.filament.widgets.owner-units-widget')
 
             {{-- Trend Jumlah Penghuni - Full Width --}}
-            <div class="w-full">
-                @livewire('app.filament.widgets.revenue-trend-chart')
-            </div>
+            
 
             {{-- Konfirmasi Stats Widget --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -68,10 +66,6 @@
                 @livewire('app.filament.widgets.superadmin-units-widget')
             @endif
 
-            {{-- Performance Tables --}}
-            @livewire('app.filament.widgets.top-performing-units-widget')
-
-            @livewire('app.filament.widgets.unit-performance-widget')
 
         @else
             {{-- No Role or Unknown Role --}}

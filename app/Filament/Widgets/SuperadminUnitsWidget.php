@@ -49,9 +49,9 @@ class SuperadminUnitsWidget extends Widget implements HasForms
         $allUnits = Unit::with('owner')
             ->when($this->searchTerm, function ($query) {
                 $query->where('nama_cluster', 'like', '%' . $this->searchTerm . '%')
-                    ->orWhereHas('owner', function ($q) {
-                        $q->where('nama', 'like', '%' . $this->searchTerm . '%');
-                    });
+                      ->orWhereHas('owner', function ($q) {
+                          $q->where('nama', 'like', '%' . $this->searchTerm . '%');
+                      });
             })
             ->get()
             ->map(function ($unit) {
@@ -66,19 +66,22 @@ class SuperadminUnitsWidget extends Widget implements HasForms
         if ($this->selectedUnitId) {
             $unit = Unit::with(['alamat', 'kamars.ketersediaan', 'kamars.tipeKamar', 'owner'])
                 ->find($this->selectedUnitId);
-
+            
             if ($unit) {
                 $rooms = $this->getRoomsDataForUnit($unit);
-
+                
+                // Sort rooms by nama (ascending)
+                $sortedRooms = collect($rooms)->sortBy('nama')->values()->all();
+                
                 $selectedUnit = [
                     'id' => $unit->id,
                     'nama' => $unit->nama_cluster ?? 'Unit Tanpa Nama',
                     'alamat' => $unit->alamat?->alamat_lengkap ?? 'Alamat tidak tersedia',
                     'owner' => $unit->owner?->nama ?? 'No Owner',
-                    'rooms' => $rooms,
-                    'total_rooms' => count($rooms),
-                    'occupied_rooms' => collect($rooms)->where('status', 'terisi')->count(),
-                    'available_rooms' => collect($rooms)->where('status', 'kosong')->count(),
+                    'rooms' => $sortedRooms,
+                    'total_rooms' => count($sortedRooms),
+                    'occupied_rooms' => collect($sortedRooms)->where('status', 'terisi')->count(),
+                    'available_rooms' => collect($sortedRooms)->where('status', 'kosong')->count(),
                 ];
             }
         }
@@ -93,11 +96,11 @@ class SuperadminUnitsWidget extends Widget implements HasForms
     private function getRoomsDataForUnit($unit): array
     {
         $rooms = [];
-
+        
         foreach ($unit->kamars as $kamar) {
             // Cek status ketersediaan kamar
             $status = $kamar->ketersediaan?->status ?? 'kosong';
-
+            
             // Ambil penghuni aktif berdasarkan log terakhir dengan status checkin
             $activeLog = LogPenghuni::where('kamar_id', $kamar->id)
                 ->where('status', 'checkin')
@@ -112,15 +115,15 @@ class SuperadminUnitsWidget extends Widget implements HasForms
                     ->where('status', 'checkout')
                     ->where('tanggal', '>', $activeLog->tanggal)
                     ->first();
-
+                
                 // Jika ada checkout setelah checkin, berarti kamar sudah kosong
                 if ($checkoutLog) {
                     $activeLog = null;
                 }
             }
-
+            
             $penghuni = $activeLog?->penghuni;
-
+            
             // Format tanggal dengan aman
             $checkinDate = 'Tidak diketahui';
             if ($activeLog && $activeLog->tanggal) {
@@ -134,7 +137,7 @@ class SuperadminUnitsWidget extends Widget implements HasForms
                     $checkinDate = $activeLog->tanggal; // Fallback ke string asli
                 }
             }
-
+            
             $rooms[] = [
                 'id' => $kamar->id,
                 'nama' => $kamar->nama ?? 'Kamar ' . $kamar->id,
@@ -152,7 +155,7 @@ class SuperadminUnitsWidget extends Widget implements HasForms
                 ] : null
             ];
         }
-
+        
         return $rooms;
     }
 
@@ -172,7 +175,7 @@ class SuperadminUnitsWidget extends Widget implements HasForms
         try {
             $viewData = $this->getViewData();
             $unit = $viewData['selectedUnit'];
-
+            
             if ($unit) {
                 $room = collect($unit['rooms'])->firstWhere('nama', $roomName);
                 if ($room) {

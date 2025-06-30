@@ -72,7 +72,7 @@
                                     <span>Terisi</span>
                                 </div>
                                 <div class="text-gray-400">
-                                    Klik nama kamar untuk detail
+                                    Hover kamar untuk detail penghuni
                                 </div>
                             </div>
                         </div>
@@ -109,7 +109,7 @@
                         </x-filament::badge>
                     </div>
                     <div class="text-right">
-                        <span class="text-sm font-medium">{{ $roomDetail['tipe'] ?? 'Standard' }}</span>
+                        <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $roomDetail['tipe'] ?? 'Standard' }}</span>
                     </div>
                 </div>
 
@@ -119,11 +119,11 @@
                         <h4 class="font-semibold text-gray-900 dark:text-white">Informasi Kamar</h4>
                         <div class="grid grid-cols-2 gap-3 text-sm">
                             <div>
-                                <span class="font-medium text-gray-500">Lantai:</span>
+                                <span class="font-medium text-gray-500 dark:text-gray-400">Lantai:</span>
                                 <span class="text-gray-900 dark:text-white">{{ $roomDetail['lantai'] ?? 1 }}</span>
                             </div>
                             <div>
-                                <span class="font-medium text-gray-500">Ukuran:</span>
+                                <span class="font-medium text-gray-500 dark:text-gray-400">Ukuran:</span>
                                 <span class="text-gray-900 dark:text-white">{{ $roomDetail['ukuran'] ?? 'Tidak diketahui' }}</span>
                             </div>
                         </div>
@@ -137,34 +137,34 @@
                             
                             <div class="grid grid-cols-1 gap-3">
                                 <div>
-                                    <span class="text-sm font-medium text-gray-500">Kode:</span>
+                                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Kode:</span>
                                     <p class="text-sm text-gray-900 dark:text-white">{{ $roomDetail['penghuni']['kode'] ?? '-' }}</p>
                                 </div>
                                 
                                 <div>
-                                    <span class="text-sm font-medium text-gray-500">Nama:</span>
+                                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Nama:</span>
                                     <p class="text-sm text-gray-900 dark:text-white">{{ $roomDetail['penghuni']['nama'] }}</p>
                                 </div>
                                 
                                 <div>
-                                    <span class="text-sm font-medium text-gray-500">Telepon:</span>
+                                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Telepon:</span>
                                     <p class="text-sm text-gray-900 dark:text-white">{{ $roomDetail['penghuni']['telepon'] ?? '-' }}</p>
                                 </div>
 
                                 @if($roomDetail['penghuni']['email'])
                                 <div>
-                                    <span class="text-sm font-medium text-gray-500">Email:</span>
+                                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Email:</span>
                                     <p class="text-sm text-gray-900 dark:text-white">{{ $roomDetail['penghuni']['email'] }}</p>
                                 </div>
                                 @endif
                                 
                                 <div>
-                                    <span class="text-sm font-medium text-gray-500">Check-in:</span>
+                                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Check-in:</span>
                                     <p class="text-sm text-gray-900 dark:text-white">{{ $roomDetail['penghuni']['checkin'] }}</p>
                                 </div>
                                 
                                 <div>
-                                    <span class="text-sm font-medium text-gray-500">Deposit:</span>
+                                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Deposit:</span>
                                     <p class="text-sm text-gray-900 dark:text-white">{{ $roomDetail['penghuni']['deposit'] }}</p>
                                 </div>
                             </div>
@@ -173,7 +173,7 @@
                 @else
                     <div class="text-center py-4">
                         <x-heroicon-o-user class="mx-auto h-12 w-12 text-gray-400" />
-                        <p class="mt-2 text-sm text-gray-500">Kamar ini sedang kosong</p>
+                        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Kamar ini sedang kosong</p>
                     </div>
                 @endif
             </div>

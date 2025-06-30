@@ -4,10 +4,15 @@ namespace App\Filament\Resources\UnitResource\Pages;
 
 use App\Filament\Resources\UnitResource;
 use App\Models\Unit;
+use App\Models\Kamar;
+use App\Models\LogPenghuni;
+use App\Models\Penghuni;
+use App\Models\HargaKamar;
 use Filament\Resources\Pages\Page;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Collection;
+use Carbon\Carbon;
 
 class RoomLayout extends Page
 {
@@ -16,8 +21,8 @@ class RoomLayout extends Page
 
     public Unit $record;
     public Collection $rooms;
-
-    public $hargaPerTipe = 10;
+    public $showDetailModal = false;
+    public $selectedRoomDetail = null;
 
     public function mount(Unit $record): void
     {
@@ -25,17 +30,17 @@ class RoomLayout extends Page
         $this->rooms = $this->getRoomsData();
     }
 
-    public function getTitle(): string
-    {
-        return "Layout Kamar - {$this->record->nama_cluster}";
-    }
+    // public function getTitle(): string
+    // {
+    //     return "Layout Kamar - {$this->record->nama_cluster}";
+    // }
 
-    public function getSubheading(): ?string
-    {
-        return 'Manajemen kamar dan penghuni';
-    }
+    // public function getSubheading(): ?string
+    // {
+    //     return 'Manajemen kamar dan penghuni';
+    // }
 
-    public function getHeaderActions(): array
+    protected function getHeaderActions(): array
     {
         return [
             Action::make('back')
@@ -46,241 +51,165 @@ class RoomLayout extends Page
         ];
     }
 
-    // Method untuk mendapatkan data dummy kamar
+    // Method untuk mendapatkan data kamar dari database
     public function getRoomsData(): Collection
     {
-        $rooms = [
-            [
-                'id' => 1,
-                'nama' => 'K101',
-                'lantai' => 1,
-                'tipe' => 'Standard',
-                'status' => 'kosong',
-                'harga' => 800000,
-                'ukuran' => '3x4m',
-                'fasilitas' => ['AC', 'Kasur', 'Lemari', 'Meja Belajar'],
-                'penghuni' => null,
-            ],
-            [
-                'id' => 2,
-                'nama' => 'K102',
-                'lantai' => 1,
-                'tipe' => 'Standard',
-                'status' => 'terisi',
-                'harga' => 800000,
-                'ukuran' => '3x4m',
-                'fasilitas' => ['AC', 'Kasur', 'Lemari', 'Meja Belajar'],
-                'penghuni' => [
-                    'nama' => 'Ahmad Rizki Pratama',
-                    'telepon' => '081234567890',
-                    'email' => 'ahmad.rizki@email.com',
-                    'pekerjaan' => 'Software Developer',
-                    'tanggal_masuk' => '2024-01-15',
-                    'tanggal_berakhir' => '2024-07-15',
-                    'status_pembayaran' => 'Lunas',
-                    'alamat_asal' => 'Jakarta Selatan',
-                    'umur' => 25,
-                    'jenis_kelamin' => 'Laki-laki',
-                ],
-            ],
-            [
-                'id' => 3,
-                'nama' => 'K103',
-                'lantai' => 1,
-                'tipe' => 'Standard',
-                'status' => 'booked',
-                'harga' => 800000,
-                'ukuran' => '3x4m',
-                'fasilitas' => ['AC', 'Kasur', 'Lemari', 'Meja Belajar'],
-                'penghuni' => [
-                    'nama' => 'Siti Nurhaliza',
-                    'telepon' => '081234567891',
-                    'email' => 'siti.nurhaliza@email.com',
-                    'pekerjaan' => 'Marketing Executive',
-                    'tanggal_masuk' => '2024-12-20',
-                    'tanggal_berakhir' => '2025-12-20',
-                    'status_pembayaran' => 'DP 50%',
-                    'alamat_asal' => 'Bandung',
-                    'umur' => 23,
-                    'jenis_kelamin' => 'Perempuan',
-                ],
-            ],
-            [
-                'id' => 4,
-                'nama' => 'K104',
-                'lantai' => 1,
-                'tipe' => 'Premium',
-                'status' => 'terisi',
-                'harga' => 1200000,
-                'ukuran' => '4x5m',
-                'fasilitas' => ['AC', 'Kasur', 'Lemari', 'Meja Kerja', 'Kulkas Mini', 'TV'],
-                'penghuni' => [
-                    'nama' => 'Budi Santoso',
-                    'telepon' => '081234567892',
-                    'email' => 'budi.santoso@email.com',
-                    'pekerjaan' => 'Data Analyst',
-                    'tanggal_masuk' => '2024-02-01',
-                    'tanggal_berakhir' => '2025-02-01',
-                    'status_pembayaran' => 'Lunas',
-                    'alamat_asal' => 'Surabaya',
-                    'umur' => 27,
-                    'jenis_kelamin' => 'Laki-laki',
-                ],
-            ],
-            [
-                'id' => 5,
-                'nama' => 'K105',
-                'lantai' => 1,
-                'tipe' => 'Standard',
-                'status' => 'kosong',
-                'harga' => 800000,
-                'ukuran' => '3x4m',
-                'fasilitas' => ['AC', 'Kasur', 'Lemari', 'Meja Belajar'],
-                'penghuni' => null,
-            ],
-            [
-                'id' => 6,
-                'nama' => 'K201',
-                'lantai' => 2,
-                'tipe' => 'Standard',
-                'status' => 'kosong',
-                'harga' => 850000,
-                'ukuran' => '3x4m',
-                'fasilitas' => ['AC', 'Kasur', 'Lemari', 'Meja Belajar'],
-                'penghuni' => null,
-            ],
-            [
-                'id' => 7,
-                'nama' => 'K202',
-                'lantai' => 2,
-                'tipe' => 'Standard',
-                'status' => 'terisi',
-                'harga' => 850000,
-                'ukuran' => '3x4m',
-                'fasilitas' => ['AC', 'Kasur', 'Lemari', 'Meja Belajar'],
-                'penghuni' => [
-                    'nama' => 'Dewi Sartika Putri',
-                    'telepon' => '081234567893',
-                    'email' => 'dewi.sartika@email.com',
-                    'pekerjaan' => 'Graphic Designer',
-                    'tanggal_masuk' => '2024-03-10',
-                    'tanggal_berakhir' => '2024-09-10',
-                    'status_pembayaran' => 'Lunas',
-                    'alamat_asal' => 'Yogyakarta',
-                    'umur' => 24,
-                    'jenis_kelamin' => 'Perempuan',
-                ],
-            ],
-            [
-                'id' => 8,
-                'nama' => 'K203',
-                'lantai' => 2,
-                'tipe' => 'Premium',
-                'status' => 'kosong',
-                'harga' => 1300000,
-                'ukuran' => '4x5m',
-                'fasilitas' => ['AC', 'Kasur', 'Lemari', 'Meja Kerja', 'Kulkas Mini', 'TV'],
-                'penghuni' => null,
-            ],
-            [
-                'id' => 9,
-                'nama' => 'K204',
-                'lantai' => 2,
-                'tipe' => 'Premium',
-                'status' => 'terisi',
-                'harga' => 1300000,
-                'ukuran' => '4x5m',
-                'fasilitas' => ['AC', 'Kasur', 'Lemari', 'Meja Kerja', 'Kulkas Mini', 'TV'],
-                'penghuni' => [
-                    'nama' => 'Eko Prasetyo Wijaya',
-                    'telepon' => '081234567894',
-                    'email' => 'eko.prasetyo@email.com',
-                    'pekerjaan' => 'Financial Analyst',
-                    'tanggal_masuk' => '2024-01-20',
-                    'tanggal_berakhir' => '2025-01-20',
-                    'status_pembayaran' => 'Lunas',
-                    'alamat_asal' => 'Semarang',
-                    'umur' => 26,
-                    'jenis_kelamin' => 'Laki-laki',
-                ],
-            ],
-            [
-                'id' => 10,
-                'nama' => 'K205',
-                'lantai' => 2,
-                'tipe' => 'Standard',
-                'status' => 'maintenance',
-                'harga' => 850000,
-                'ukuran' => '3x4m',
-                'fasilitas' => ['AC', 'Kasur', 'Lemari', 'Meja Belajar'],
-                'penghuni' => null,
-            ],
-        ];
+        $rooms = [];
+        
+        // Ambil semua kamar dari unit ini
+        $kamars = Kamar::where('unit_id', $this->record->id)
+            ->with(['ketersediaan', 'tipeKamar.hargaKamars'])
+            ->orderBy('nama')
+            ->get();
 
+        foreach ($kamars as $kamar) {
+            // Cek status ketersediaan kamar
+            $status = $kamar->ketersediaan?->status ?? 'kosong';
+            
+            // Ambil penghuni aktif berdasarkan log terakhir dengan status checkin
+            $activeLog = LogPenghuni::where('kamar_id', $kamar->id)
+                ->where('status', 'checkin')
+                ->with('penghuni')
+                ->orderBy('tanggal', 'desc')
+                ->first();
+
+            // Cek apakah ada log checkout setelah checkin terakhir
+            if ($activeLog) {
+                $checkoutLog = LogPenghuni::where('kamar_id', $kamar->id)
+                    ->where('penghuni_id', $activeLog->penghuni_id)
+                    ->where('status', 'checkout')
+                    ->where('tanggal', '>', $activeLog->tanggal)
+                    ->first();
+                
+                // Jika ada checkout setelah checkin, berarti kamar sudah kosong
+                if ($checkoutLog) {
+                    $activeLog = null;
+                    $status = 'kosong'; // Update status jika sudah checkout
+                }
+            }
+            
+            $penghuni = $activeLog?->penghuni;
+            
+            // Format tanggal dengan aman
+            $checkinDate = null;
+            $checkoutDate = null;
+            
+            if ($activeLog && $activeLog->tanggal) {
+                try {
+                    if ($activeLog->tanggal instanceof Carbon) {
+                        $checkinDate = $activeLog->tanggal->format('Y-m-d');
+                    } else {
+                        $checkinDate = Carbon::parse($activeLog->tanggal)->format('Y-m-d');
+                    }
+                    
+                    // Estimasi checkout (1 tahun dari checkin)
+                    $checkoutDate = Carbon::parse($checkinDate)->addYear()->format('Y-m-d');
+                } catch (\Exception $e) {
+                    $checkinDate = $activeLog->tanggal;
+                }
+            }
+            
+            $rooms[] = [
+                'id' => $kamar->id,
+                'nama' => $kamar->nama ?? 'Kamar ' . $kamar->id,
+                'tipe' => $kamar->tipeKamar?->nama_tipe ?? 'Standard',
+                'status' => $status,
+                'penghuni' => $penghuni ? [
+                    'nama' => $penghuni->nama ?? 'Tidak ada nama',
+                    'telepon' => $penghuni->telepon ?? 'Tidak ada',
+                    'email' => $penghuni->email ?? 'Tidak ada',
+                    'pekerjaan' => $penghuni->pekerjaan ?? 'Tidak diketahui',
+                    'tanggal_masuk' => $checkinDate,
+                    'tanggal_berakhir' => $checkoutDate,
+                    'status_pembayaran' => $this->getStatusPembayaran($activeLog),
+                    'alamat_asal' => $penghuni->alamat ?? 'Tidak diketahui',
+                    'umur' => $this->calculateAge($penghuni->tanggal_lahir),
+                    'jenis_kelamin' => $penghuni->jenis_kelamin ?? 'Tidak diketahui',
+                    'deposit' => $activeLog->deposit ?? 0,
+                ] : null
+            ];
+        }
+        
         return collect($rooms);
+    }
+
+    // Helper method untuk menghitung umur
+    private function calculateAge($tanggalLahir): int
+    {
+        if (!$tanggalLahir) return 0;
+        
+        try {
+            return Carbon::parse($tanggalLahir)->age;
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+
+    // Helper method untuk status pembayaran
+    private function getStatusPembayaran($activeLog): string
+    {
+        if (!$activeLog) return 'Tidak ada data';
+        
+        // Logika sederhana: jika ada deposit, anggap lunas
+        // Dalam implementasi nyata, ini harus dihubungkan dengan sistem pembayaran
+        return ($activeLog->deposit ?? 0) > 0 ? 'Lunas' : 'Belum Bayar';
     }
 
     // Method untuk checkout penghuni
     public function checkoutPenghuni($kamarId)
     {
-        Notification::make()
-            ->title('Checkout Berhasil')
-            ->body("Penghuni kamar telah berhasil di-checkout.")
-            ->success()
-            ->send();
+        try {
+            // Cari log checkin terakhir untuk kamar ini
+            $activeLog = LogPenghuni::where('kamar_id', $kamarId)
+                ->where('status', 'checkin')
+                ->orderBy('tanggal', 'desc')
+                ->first();
 
-        // Update status kamar di collection
-        $this->rooms = $this->rooms->map(function ($room) use ($kamarId) {
-            if ($room['id'] == $kamarId) {
-                $room['status'] = 'kosong';
-                $room['penghuni'] = null;
+            if ($activeLog) {
+                // Buat log checkout
+                LogPenghuni::create([
+                    'penghuni_id' => $activeLog->penghuni_id,
+                    'kamar_id' => $kamarId,
+                    'tanggal' => now(),
+                    'status' => 'checkout',
+                    'created_by' => auth()->id(),
+                ]);
+
+                // Update status ketersediaan kamar
+                $kamar = Kamar::find($kamarId);
+                if ($kamar && $kamar->ketersediaan) {
+                    $kamar->ketersediaan->update(['status' => 'kosong']);
+                }
+
+                Notification::make()
+                    ->title('Checkout Berhasil')
+                    ->body("Penghuni telah berhasil di-checkout.")
+                    ->success()
+                    ->send();
+
+                // Refresh data
+                $this->rooms = $this->getRoomsData();
+            } else {
+                Notification::make()
+                    ->title('Error')
+                    ->body("Tidak ada penghuni aktif di kamar ini.")
+                    ->danger()
+                    ->send();
             }
-            return $room;
-        });
-    }
-
-    // Method untuk checkin penghuni baru
-    public function checkinPenghuni($kamarId)
-    {
-        Notification::make()
-            ->title('Checkin Berhasil')
-            ->body("Penghuni baru telah berhasil di-checkin ke kamar.")
-            ->success()
-            ->send();
-
-        // Update status kamar di collection
-        $this->rooms = $this->rooms->map(function ($room) use ($kamarId) {
-            if ($room['id'] == $kamarId) {
-                $room['status'] = 'terisi';
-                // Dalam implementasi nyata, ini akan membuka form untuk input data penghuni
-            }
-            return $room;
-        });
-    }
-
-    // Method untuk konfirmasi booking
-    public function konfirmasiBooking($kamarId)
-    {
-        Notification::make()
-            ->title('Booking Dikonfirmasi')
-            ->body("Booking kamar telah dikonfirmasi.")
-            ->success()
-            ->send();
-
-        // Update status kamar di collection
-        $this->rooms = $this->rooms->map(function ($room) use ($kamarId) {
-            if ($room['id'] == $kamarId) {
-                $room['status'] = 'terisi';
-            }
-            return $room;
-        });
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Error')
+                ->body("Gagal melakukan checkout: " . $e->getMessage())
+                ->danger()
+                ->send();
+        }
     }
 
     // Method untuk view detail kamar
     public function viewDetail($kamarId)
     {
         $room = $this->rooms->firstWhere('id', $kamarId);
-
+        
         if (!$room) {
             Notification::make()
                 ->title('Error')
@@ -290,53 +219,23 @@ class RoomLayout extends Page
             return;
         }
 
-        // Dalam implementasi nyata, ini akan membuka modal atau redirect ke halaman detail
-        Notification::make()
-            ->title('Detail Kamar')
-            ->body("Menampilkan detail kamar {$room['nama']}")
-            ->info()
-            ->send();
+        $this->selectedRoomDetail = $room;
+        $this->showDetailModal = true;
     }
 
     // Method untuk mendapatkan statistik kamar
     public function getStatistik(): array
     {
         $allRooms = $this->rooms;
-
+        
         return [
             'total' => $allRooms->count(),
             'kosong' => $allRooms->where('status', 'kosong')->count(),
             'terisi' => $allRooms->where('status', 'terisi')->count(),
             'booked' => $allRooms->where('status', 'booked')->count(),
             'maintenance' => $allRooms->where('status', 'maintenance')->count(),
-            'tingkat_hunian' => $allRooms->count() > 0 ?
+            'tingkat_hunian' => $allRooms->count() > 0 ? 
                 round(($allRooms->where('status', 'terisi')->count() / $allRooms->count()) * 100, 1) : 0,
-            'revenue_aktual' => $allRooms->where('status', 'terisi')->sum('harga'),
-            'revenue_potensial' => $allRooms->sum('harga'),
         ];
-    }
-
-    // Helper method untuk format status
-    public function getStatusLabel($status): string
-    {
-        return match ($status) {
-            'kosong' => 'Tersedia',
-            'terisi' => 'Terisi',
-            'booked' => 'Dipesan',
-            'maintenance' => 'Maintenance',
-            default => $status,
-        };
-    }
-
-    // Helper method untuk status color
-    public function getStatusColor($status): string
-    {
-        return match ($status) {
-            'kosong' => 'success',
-            'terisi' => 'danger',
-            'booked' => 'warning',
-            'maintenance' => 'gray',
-            default => 'gray',
-        };
     }
 }

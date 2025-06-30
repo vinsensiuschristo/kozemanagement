@@ -23,9 +23,9 @@ class OwnerUnitsWidget extends Widget
     {
         $user = Auth::user();
         $canView = $user && $user->hasRole('Owner');
-
+        
         \Log::info('OwnerUnitsWidget canView - User: ' . ($user?->id ?? 'null') . ', Can View: ' . ($canView ? 'yes' : 'no'));
-
+        
         return $canView;
     }
 
@@ -37,9 +37,9 @@ class OwnerUnitsWidget extends Widget
     protected function getViewData(): array
     {
         $user = Auth::user();
-
+        
         \Log::info('OwnerUnitsWidget getViewData - User: ' . ($user?->id ?? 'null'));
-
+        
         if (!$user) {
             \Log::warning('OwnerUnitsWidget getViewData - No user found');
             return ['units' => collect()];
@@ -65,15 +65,18 @@ class OwnerUnitsWidget extends Widget
 
         $unitsData = $units->map(function ($unit) {
             $rooms = $this->getRoomsDataForUnit($unit);
-
+            
+            // Sort rooms by nama (ascending)
+            $sortedRooms = collect($rooms)->sortBy('nama')->values()->all();
+            
             return [
                 'id' => $unit->id,
                 'nama' => $unit->nama_cluster ?? 'Unit Tanpa Nama',
                 'alamat' => $unit->alamat?->alamat_lengkap ?? 'Alamat tidak tersedia',
-                'rooms' => $rooms,
-                'total_rooms' => count($rooms),
-                'occupied_rooms' => collect($rooms)->where('status', 'terisi')->count(),
-                'available_rooms' => collect($rooms)->where('status', 'kosong')->count(),
+                'rooms' => $sortedRooms,
+                'total_rooms' => count($sortedRooms),
+                'occupied_rooms' => collect($sortedRooms)->where('status', 'terisi')->count(),
+                'available_rooms' => collect($sortedRooms)->where('status', 'kosong')->count(),
             ];
         });
 
@@ -85,11 +88,11 @@ class OwnerUnitsWidget extends Widget
     private function getRoomsDataForUnit($unit): array
     {
         $rooms = [];
-
+        
         foreach ($unit->kamars as $kamar) {
             // Cek status ketersediaan kamar
             $status = $kamar->ketersediaan?->status ?? 'kosong';
-
+            
             // Ambil penghuni aktif berdasarkan log terakhir dengan status checkin
             $activeLog = LogPenghuni::where('kamar_id', $kamar->id)
                 ->where('status', 'checkin')
@@ -104,15 +107,15 @@ class OwnerUnitsWidget extends Widget
                     ->where('status', 'checkout')
                     ->where('tanggal', '>', $activeLog->tanggal)
                     ->first();
-
+                
                 // Jika ada checkout setelah checkin, berarti kamar sudah kosong
                 if ($checkoutLog) {
                     $activeLog = null;
                 }
             }
-
+            
             $penghuni = $activeLog?->penghuni;
-
+            
             // Format tanggal dengan aman
             $checkinDate = 'Tidak diketahui';
             if ($activeLog && $activeLog->tanggal) {
@@ -126,7 +129,7 @@ class OwnerUnitsWidget extends Widget
                     $checkinDate = $activeLog->tanggal; // Fallback ke string asli
                 }
             }
-
+            
             $rooms[] = [
                 'id' => $kamar->id,
                 'nama' => $kamar->nama ?? 'Kamar ' . $kamar->id,
@@ -144,7 +147,7 @@ class OwnerUnitsWidget extends Widget
                 ] : null
             ];
         }
-
+        
         return $rooms;
     }
 
@@ -153,7 +156,7 @@ class OwnerUnitsWidget extends Widget
         try {
             $units = $this->getViewData()['units'];
             $unit = $units->firstWhere('id', $unitId);
-
+            
             if ($unit) {
                 $room = collect($unit['rooms'])->firstWhere('nama', $roomName);
                 if ($room) {
@@ -178,7 +181,7 @@ class OwnerUnitsWidget extends Widget
             return redirect()->route('filament.admin.resources.units.room-layout', ['record' => $unitId]);
         } catch (\Exception $e) {
             $this->dispatch('notify', [
-                'type' => 'error',
+                'type' => 'error', 
                 'message' => 'Gagal membuka detail unit'
             ]);
         }
