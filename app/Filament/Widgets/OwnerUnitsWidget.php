@@ -18,6 +18,7 @@ class OwnerUnitsWidget extends Widget
 
     public $selectedRoom = '';
     public $roomDetail = null;
+    public $showDetailModal = false;
 
     public static function canView(): bool
     {
@@ -57,7 +58,8 @@ class OwnerUnitsWidget extends Widget
             ->with([
                 'alamat',
                 'kamars.ketersediaan',
-                'kamars.tipeKamar'
+                'kamars.tipeKamar',
+                'owner'
             ])
             ->get();
 
@@ -73,6 +75,7 @@ class OwnerUnitsWidget extends Widget
                 'id' => $unit->id,
                 'nama' => $unit->nama_cluster ?? 'Unit Tanpa Nama',
                 'alamat' => $unit->alamat?->alamat_lengkap ?? 'Alamat tidak tersedia',
+                'owner' => $unit->owner?->nama ?? 'No Owner',
                 'rooms' => $sortedRooms,
                 'total_rooms' => count($sortedRooms),
                 'occupied_rooms' => collect($sortedRooms)->where('status', 'terisi')->count(),
@@ -139,7 +142,7 @@ class OwnerUnitsWidget extends Widget
                 'ukuran' => $kamar->ukuran ?? 'Tidak diketahui',
                 'penghuni' => $penghuni ? [
                     'nama' => $penghuni->nama ?? 'Tidak ada nama',
-                    'telepon' => $penghuni->no_telp ?? 'Tidak ada',
+                    'telepon' => $penghuni->telepon ?? 'Tidak ada',
                     'email' => $penghuni->email ?? 'Tidak ada',
                     'checkin' => $checkinDate,
                     'deposit' => isset($activeLog->deposit) ? 'Rp ' . number_format($activeLog->deposit, 0, ',', '.') : 'Tidak ada data',
@@ -151,20 +154,30 @@ class OwnerUnitsWidget extends Widget
         return $rooms;
     }
 
-    public function showRoomDetail($unitId, $roomName)
+    public function showRoomDetail($roomName)
     {
         try {
-            $units = $this->getViewData()['units'];
-            $unit = $units->firstWhere('id', $unitId);
+            $viewData = $this->getViewData();
+            $units = $viewData['units'];
             
-            if ($unit) {
+            // Cari room di semua units milik owner
+            foreach ($units as $unit) {
                 $room = collect($unit['rooms'])->firstWhere('nama', $roomName);
                 if ($room) {
                     $this->selectedRoom = $roomName;
                     $this->roomDetail = $room;
+                    $this->showDetailModal = true;
                     $this->dispatch('open-modal', id: 'room-detail-modal');
+                    return;
                 }
             }
+            
+            // Jika tidak ditemukan
+            $this->dispatch('notify', [
+                'type' => 'warning',
+                'message' => 'Kamar tidak ditemukan'
+            ]);
+            
         } catch (\Exception $e) {
             \Log::error('OwnerUnitsWidget showRoomDetail error: ' . $e->getMessage());
             $this->dispatch('notify', [
@@ -174,7 +187,14 @@ class OwnerUnitsWidget extends Widget
         }
     }
 
-    // Method ini tidak lagi diperlukan karena menggunakan onclick JavaScript
+    public function closeModal()
+    {
+        $this->showDetailModal = false;
+        $this->selectedRoom = '';
+        $this->roomDetail = null;
+    }
+
+    // Method untuk redirect ke room layout
     public function viewUnitDetail($unitId)
     {
         try {

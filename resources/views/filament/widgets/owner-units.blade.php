@@ -45,16 +45,36 @@
                             <div class="ml-4 flex-shrink-0">
                                 <div class="flex flex-wrap gap-2 justify-end">
                                     @forelse($unit['rooms'] as $room)
-                                        <x-filament::badge 
-                                            :color="$room['status'] === 'terisi' ? 'danger' : 'success'"
-                                            size="sm"
-                                            class="px-3 py-2 cursor-pointer hover:scale-105 transition-transform text-xs font-medium"
-                                            :tooltip="'Kamar ' . $room['nama'] . ' - ' . ucfirst($room['status']) . ($room['status'] === 'terisi' && $room['penghuni'] ? ' - ' . $room['penghuni']['nama'] : '')"
-                                            wire:click.stop="showRoomDetail({{ $unit['id'] }}, '{{ $room['nama'] }}')">
-                                            {{ $room['nama'] }}
-                                        </x-filament::badge>
+                                        <div x-data="{ 
+                                            tooltip: false,
+                                            tooltipText: 'Kamar {{ $room['nama'] }} - {{ ucfirst($room['status']) }}{{ $room['status'] === 'terisi' && $room['penghuni'] ? ' - ' . $room['penghuni']['nama'] : '' }}'
+                                        }" 
+                                        class="relative">
+                                            <x-filament::badge 
+                                                :color="$room['status'] === 'terisi' ? 'danger' : 'success'"
+                                                size="sm"
+                                                class="px-3 py-2 cursor-pointer hover:scale-105 transition-transform text-xs font-medium"
+                                                @mouseenter="tooltip = true"
+                                                @mouseleave="tooltip = false"
+                                                wire:click.stop="showRoomDetail('{{ $room['nama'] }}')">
+                                                {{ $room['nama'] }}
+                                            </x-filament::badge>
+                                            
+                                            <!-- Custom Tooltip -->
+                                            <div x-show="tooltip" 
+                                                x-transition:enter="transition ease-out duration-200"
+                                                x-transition:enter-start="opacity-0 transform scale-95"
+                                                x-transition:enter-end="opacity-100 transform scale-100"
+                                                x-transition:leave="transition ease-in duration-75"
+                                                x-transition:leave-start="opacity-100 transform scale-100"
+                                                x-transition:leave-end="opacity-0 transform scale-95"
+                                                class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap z-50"
+                                                x-text="tooltipText"
+                                                style="display: none;">
+                                            </div>
+                                        </div>
                                     @empty
-                                        <span class="text-xs text-gray-500">Tidak ada kamar</span>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">Tidak ada kamar</span>
                                     @endforelse
                                 </div>
                             </div>
@@ -71,8 +91,8 @@
                                     <div class="w-3 h-3 bg-red-500 rounded"></div>
                                     <span>Terisi</span>
                                 </div>
-                                <div class="text-gray-400">
-                                    Hover kamar untuk detail penghuni
+                                <div class="text-gray-400 dark:text-gray-500">
+                                    Klik kamar untuk detail penghuni
                                 </div>
                             </div>
                         </div>
@@ -151,7 +171,7 @@
                                     <p class="text-sm text-gray-900 dark:text-white">{{ $roomDetail['penghuni']['telepon'] ?? '-' }}</p>
                                 </div>
 
-                                @if($roomDetail['penghuni']['email'])
+                                @if($roomDetail['penghuni']['email'] && $roomDetail['penghuni']['email'] !== 'Tidak ada')
                                 <div>
                                     <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Email:</span>
                                     <p class="text-sm text-gray-900 dark:text-white">{{ $roomDetail['penghuni']['email'] }}</p>
@@ -172,7 +192,7 @@
                     </x-filament::card>
                 @else
                     <div class="text-center py-4">
-                        <x-heroicon-o-user class="mx-auto h-12 w-12 text-gray-400" />
+                        <x-heroicon-o-user class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
                         <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Kamar ini sedang kosong</p>
                     </div>
                 @endif

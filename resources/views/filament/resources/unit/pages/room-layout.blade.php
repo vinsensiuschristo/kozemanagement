@@ -9,7 +9,7 @@
                 </p>
             </div>
             
-            <div class="flex items-center space-x-8">
+            <div class="flex items-center space-x-8 gap-4">
                 @php $stats = $this->getStatistik(); @endphp
                 <div class="text-center">
                     <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['total'] }}</div>
