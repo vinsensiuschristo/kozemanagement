@@ -89,18 +89,24 @@
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex items-center justify-end space-x-2">
                                     {{-- Detail Button --}}
-                                    <button wire:click="viewDetail({{ $room['id'] }})" 
-                                            class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    <button wire:click="toggleDetail({{ $room['id'] }})" 
+                                            class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-gray-900 dark:text-white 
+                                            @if($this->expandedRoomId == $room['id']) bg-indigo-700 hover:bg-indigo-800 @else bg-indigo-600 hover:bg-indigo-700 @endif 
+                                            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            @if($this->expandedRoomId == $room['id'])
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                            @else
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            @endif
                                         </svg>
-                                        Detail
+                                        {{ $this->expandedRoomId == $room['id'] ? 'Tutup' : 'Detail' }}
                                     </button>
 
                                     {{-- Check-out Button --}}
                                     {{-- <button wire:click="checkoutPenghuni({{ $room['id'] }})" 
-                                            class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-rose-600 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
+                                            class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-gray-900 dark:text-white hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
                                             onclick="return confirm('Yakin ingin checkout penghuni ini?')">
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
@@ -110,6 +116,107 @@
                                 </div>
                             </td>
                         </tr>
+                        
+                        {{-- Detail Card Row --}}
+                        @if($this->expandedRoomId == $room['id'] && $room['penghuni'])
+                        <tr>
+                            <td colspan="7" class="px-0 py-0">
+                                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-l-4 border-indigo-500">
+                                    <div class="p-6">
+                                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                            {{-- Foto dan Info Dasar --}}
+                                            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                                                <div class="text-center mb-4">
+                                                    <div class="mx-auto h-20 w-20 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+                                                        <svg class="h-12 w-12 text-gray-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                                        </svg>
+                                                    </div>
+                                                    <h4 class="mt-3 text-lg font-semibold text-gray-900 dark:text-white">
+                                                        {{ $room['penghuni']['nama'] }}
+                                                    </h4>
+                                                    <p class="text-sm text-gray-900 dark:text-white">
+                                                        Kamar {{ $room['nama'] }} • {{ $room['tipe'] }}
+                                                    </p>
+                                                </div>
+                                                
+                                                <div class="space-y-2 text-sm">
+                                                    <div class="flex justify-between">
+                                                        <span class="font-medium text-gray-500 dark:text-gray-400">Jenis Kelamin:</span>
+                                                        <span class="text-gray-900 dark:text-white">{{ $room['penghuni']['jenis_kelamin'] }}</span>
+                                                    </div>
+                                                    <div class="flex justify-between">
+                                                        <span class="font-medium text-gray-500 dark:text-gray-400">Umur:</span>
+                                                        <span class="text-gray-900 dark:text-white">{{ $room['penghuni']['umur'] }} tahun</span>
+                                                    </div>
+                                                    <div class="flex justify-between">
+                                                        <span class="font-medium text-gray-500 dark:text-gray-400">Pekerjaan:</span>
+                                                        <span class="text-gray-900 dark:text-white">{{ $room['penghuni']['pekerjaan'] }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {{-- Kontak dan Alamat --}}
+                                            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                                                <h5 class="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                                                    <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                                                    </svg>
+                                                    Informasi Kontak
+                                                </h5>
+                                                <div class="space-y-3 text-sm">
+                                                    <div>
+                                                        <span class="font-medium text-gray-500 dark:text-gray-400">Telepon:</span>
+                                                        <p class="text-gray-900 dark:text-white">{{ $room['penghuni']['no_telp'] }}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span class="font-medium text-gray-500 dark:text-gray-400">Email:</span>
+                                                        <p class="text-gray-900 dark:text-white">{{ $room['penghuni']['email'] }}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span class="font-medium text-gray-500 dark:text-gray-400">Alamat Asal:</span>
+                                                        <p class="text-gray-900 dark:text-white">{{ $room['penghuni']['alamat_asal'] }}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {{-- Info Sewa dan Pembayaran --}}
+                                            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                                                <h5 class="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                                                    <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                                    </svg>
+                                                    Informasi Sewa
+                                                </h5>
+                                                <div class="space-y-3 text-sm">
+                                                    <div>
+                                                        <span class="font-medium text-gray-500 dark:text-gray-400">Tanggal Masuk:</span>
+                                                        <p class="text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($room['penghuni']['tanggal_masuk'])->format('d F Y') }}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span class="font-medium text-gray-500 dark:text-gray-400">Berakhir:</span>
+                                                        <p class="text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($room['penghuni']['tanggal_berakhir'])->format('d F Y') }}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span class="font-medium text-gray-500 dark:text-gray-400">Status Pembayaran:</span>
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                            @if($room['penghuni']['status_pembayaran'] === 'Lunas') bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300
+                                                            @else bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 @endif">
+                                                            {{ $room['penghuni']['status_pembayaran'] }}
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <span class="font-medium text-gray-500 dark:text-gray-400">Deposit:</span>
+                                                        <p class="text-lg font-bold text-green-600 dark:text-green-400">Rp {{ number_format($room['penghuni']['deposit'], 0, ',', '.') }}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        @endif
                         @endforeach
                         
                         @if($this->rooms->where('status', 'terisi')->isEmpty())
@@ -127,135 +234,6 @@
                         @endif
                     </tbody>
                 </table>
-            </div>
-        </div>
-    </div>
-
-    {{-- Modal Detail Penghuni --}}
-    <div x-data="{ open: @entangle('showDetailModal') }" 
-         x-show="open" 
-         x-cloak
-         class="fixed inset-0 z-50 overflow-y-auto"
-         style="display: none;">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div x-show="open" 
-                 x-transition:enter="ease-out duration-300"
-                 x-transition:enter-start="opacity-0"
-                 x-transition:enter-end="opacity-100"
-                 x-transition:leave="ease-in duration-200"
-                 x-transition:leave-start="opacity-100"
-                 x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 transition-opacity" 
-                 aria-hidden="true">
-                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-            </div>
-
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-            <div x-show="open"
-                 x-transition:enter="ease-out duration-300"
-                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                 x-transition:leave="ease-in duration-200"
-                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-                
-                @if($this->selectedRoomDetail)
-                <div>
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                            Detail Penghuni - Kamar {{ $this->selectedRoomDetail['nama'] }}
-                        </h3>
-                        <button @click="open = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
-
-                    @if($this->selectedRoomDetail['penghuni'])
-                    <div class="space-y-4">
-                        {{-- Foto Profil --}}
-                        <div class="text-center">
-                            <div class="mx-auto h-20 w-20 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                                <svg class="h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                </svg>
-                            </div>
-                            <h4 class="mt-2 text-xl font-semibold text-gray-900 dark:text-white">
-                                {{ $this->selectedRoomDetail['penghuni']['nama'] }}
-                            </h4>
-                        </div>
-
-                        {{-- Data Diri --}}
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                            <h5 class="font-semibold text-gray-900 dark:text-white mb-3">Data Diri</h5>
-                            <div class="grid grid-cols-1 gap-3 text-sm">
-                                <div class="flex justify-between">
-                                    <span class="font-medium text-gray-500 dark:text-gray-400">Jenis Kelamin:</span>
-                                    <span class="text-gray-900 dark:text-white">{{ $this->selectedRoomDetail['penghuni']['jenis_kelamin'] }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="font-medium text-gray-500 dark:text-gray-400">Umur:</span>
-                                    <span class="text-gray-900 dark:text-white">{{ $this->selectedRoomDetail['penghuni']['umur'] }} tahun</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="font-medium text-gray-500 dark:text-gray-400">Pekerjaan:</span>
-                                    <span class="text-gray-900 dark:text-white">{{ $this->selectedRoomDetail['penghuni']['pekerjaan'] }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="font-medium text-gray-500 dark:text-gray-400">Alamat Asal:</span>
-                                    <span class="text-gray-900 dark:text-white">{{ $this->selectedRoomDetail['penghuni']['alamat_asal'] }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Kontak --}}
-                        <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                            <h5 class="font-semibold text-gray-900 dark:text-white mb-3">Informasi Kontak</h5>
-                            <div class="grid grid-cols-1 gap-3 text-sm">
-                                <div class="flex justify-between">
-                                    <span class="font-medium text-gray-500 dark:text-gray-400">Telepon:</span>
-                                    <span class="text-gray-900 dark:text-white">{{ $this->selectedRoomDetail['penghuni']['telepon'] }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="font-medium text-gray-500 dark:text-gray-400">Email:</span>
-                                    <span class="text-gray-900 dark:text-white">{{ $this->selectedRoomDetail['penghuni']['email'] }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Info Sewa --}}
-                        <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-                            <h5 class="font-semibold text-gray-900 dark:text-white mb-3">Informasi Sewa</h5>
-                            <div class="grid grid-cols-1 gap-3 text-sm">
-                                <div class="flex justify-between">
-                                    <span class="font-medium text-gray-500 dark:text-gray-400">Tanggal Masuk:</span>
-                                    <span class="text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($this->selectedRoomDetail['penghuni']['tanggal_masuk'])->format('d F Y') }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="font-medium text-gray-500 dark:text-gray-400">Berakhir:</span>
-                                    <span class="text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($this->selectedRoomDetail['penghuni']['tanggal_berakhir'])->format('d F Y') }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="font-medium text-gray-500 dark:text-gray-400">Status Pembayaran:</span>
-                                    <span class="px-2 py-1 text-xs font-bold rounded-full
-                                        @if($this->selectedRoomDetail['penghuni']['status_pembayaran'] === 'Lunas') bg-green-500 text-white
-                                        @else bg-yellow-500 text-white @endif">
-                                        {{ $this->selectedRoomDetail['penghuni']['status_pembayaran'] }}
-                                    </span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="font-medium text-gray-500 dark:text-gray-400">Deposit:</span>
-                                    <span class="text-gray-900 dark:text-white">Rp {{ number_format($this->selectedRoomDetail['penghuni']['deposit'], 0, ',', '.') }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
-                </div>
-                @endif
             </div>
         </div>
     </div>

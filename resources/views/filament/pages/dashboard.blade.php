@@ -23,22 +23,24 @@
 
             {{-- Owner Dashboard Overview --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                @livewire('app.filament.widgets.owner-dashboard-overview')
+                @livewire(\App\Filament\Widgets\OwnerDashboardOverview::class)
             </div>
 
             {{-- Owner Units Widget --}}
-            @livewire('app.filament.widgets.owner-units-widget')
+            @livewire(\App\Filament\Widgets\OwnerUnitsWidget::class)
 
             {{-- Trend Jumlah Penghuni - Full Width --}}
-            
+            <div class="w-full">
+                @livewire(\App\Filament\Widgets\RevenueTrendChart::class)
+            </div>
 
             {{-- Konfirmasi Stats Widget --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                @livewire('app.filament.widgets.konfirmasi-stats-widget')
+                @livewire(\App\Filament\Widgets\KonfirmasiStatsWidget::class)
             </div>
 
             {{-- Owner Quick Actions Widget --}}
-            @livewire('app.filament.widgets.owner-quick-actions-widget')
+            @livewire(\App\Filament\Widgets\OwnerQuickActionsWidget::class)
 
         @elseif($isAdmin)
             {{-- Admin/Superadmin Dashboard --}}
@@ -58,14 +60,18 @@
 
             {{-- Stats Overview --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                @livewire('app.filament.widgets.stats-overview-widget')
+                @livewire(\App\Filament\Widgets\StatsOverviewWidget::class)
             </div>
 
             {{-- Superadmin Units Widget --}}
             @if($isSuperadmin)
-                @livewire('app.filament.widgets.superadmin-units-widget')
+                @livewire(\App\Filament\Widgets\SuperadminUnitsWidget::class)
             @endif
 
+            {{-- Performance Tables --}}
+            @livewire(\App\Filament\Widgets\TopPerformingUnitsWidget::class)
+
+            @livewire(\App\Filament\Widgets\UnitPerformanceWidget::class)
 
         @else
             {{-- No Role or Unknown Role --}}

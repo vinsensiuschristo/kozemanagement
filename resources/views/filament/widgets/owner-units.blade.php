@@ -68,7 +68,7 @@
                                                 x-transition:leave="transition ease-in duration-75"
                                                 x-transition:leave-start="opacity-100 transform scale-100"
                                                 x-transition:leave-end="opacity-0 transform scale-95"
-                                                class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap z-50"
+                                                class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs font-medium dark:text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap z-50"
                                                 x-text="tooltipText"
                                                 style="display: none;">
                                             </div>
@@ -168,7 +168,7 @@
                                 
                                 <div>
                                     <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Telepon:</span>
-                                    <p class="text-sm text-gray-900 dark:text-white">{{ $roomDetail['penghuni']['telepon'] ?? '-' }}</p>
+                                    <p class="text-sm text-gray-900 dark:text-white">{{ $roomDetail['penghuni']['no_telp'] ?? '-' }}</p>
                                 </div>
 
                                 @if($roomDetail['penghuni']['email'] && $roomDetail['penghuni']['email'] !== 'Tidak ada')

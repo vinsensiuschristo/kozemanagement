@@ -142,7 +142,8 @@ class OwnerUnitsWidget extends Widget
                 'ukuran' => $kamar->ukuran ?? 'Tidak diketahui',
                 'penghuni' => $penghuni ? [
                     'nama' => $penghuni->nama ?? 'Tidak ada nama',
-                    'telepon' => $penghuni->telepon ?? 'Tidak ada',
+                    'no_telp' => $penghuni->no_telp ?? 'Tidak ada',
+                    'telepon' => $penghuni->no_telp ?? 'Tidak ada',
                     'email' => $penghuni->email ?? 'Tidak ada',
                     'checkin' => $checkinDate,
                     'deposit' => isset($activeLog->deposit) ? 'Rp ' . number_format($activeLog->deposit, 0, ',', '.') : 'Tidak ada data',

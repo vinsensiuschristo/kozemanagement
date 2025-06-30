@@ -23,6 +23,7 @@ class RoomLayout extends Page
     public Collection $rooms;
     public $showDetailModal = false;
     public $selectedRoomDetail = null;
+    public $expandedRoomId = null; // Untuk card yang di-expand
 
     public function mount(Unit $record): void
     {
@@ -189,6 +190,11 @@ class RoomLayout extends Page
 
                 // Refresh data
                 $this->rooms = $this->getRoomsData();
+                
+                // Tutup detail card jika sedang terbuka
+                if ($this->expandedRoomId == $kamarId) {
+                    $this->expandedRoomId = null;
+                }
             } else {
                 Notification::make()
                     ->title('Error')
@@ -205,22 +211,14 @@ class RoomLayout extends Page
         }
     }
 
-    // Method untuk view detail kamar
-    public function viewDetail($kamarId)
+    // Method untuk toggle detail card
+    public function toggleDetail($kamarId)
     {
-        $room = $this->rooms->firstWhere('id', $kamarId);
-        
-        if (!$room) {
-            Notification::make()
-                ->title('Error')
-                ->body('Kamar tidak ditemukan.')
-                ->danger()
-                ->send();
-            return;
+        if ($this->expandedRoomId == $kamarId) {
+            $this->expandedRoomId = null; // Tutup jika sudah terbuka
+        } else {
+            $this->expandedRoomId = $kamarId; // Buka detail
         }
-
-        $this->selectedRoomDetail = $room;
-        $this->showDetailModal = true;
     }
 
     // Method untuk mendapatkan statistik kamar
