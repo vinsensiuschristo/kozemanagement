@@ -22,7 +22,7 @@ class PemasukanPengeluaranChart extends ChartWidget
     public static function canView(): bool
     {
         $user = Auth::user();
-        return !$user->hasRole('Owner');
+        return $user->hasRole('Superadmin') || $user->hasRole('Admin') || $user->hasRole('Owner');
     }
 
     protected function getFilters(): ?array

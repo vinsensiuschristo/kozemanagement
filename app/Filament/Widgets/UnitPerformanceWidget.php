@@ -19,14 +19,15 @@ class UnitPerformanceWidget extends BaseWidget
     public static function canView(): bool
     {
         $user = Auth::user();
-        return !$user->hasRole('Owner');
+        // HANYA untuk Superadmin dan Admin, BUKAN untuk User atau Owner
+        return $user && ($user->hasRole('Superadmin') || $user->hasRole('Admin')) && !$user->hasRole('User') && !$user->hasRole('Owner');
     }
 
     public function table(Table $table): Table
     {
         $user = Auth::user();
         $isOwner = $user->hasRole('Owner');
-
+        
         $query = Unit::query()
             ->with(['kamars.ketersediaan', 'alamat', 'owner'])
             ->withCount([
@@ -119,7 +120,7 @@ class UnitPerformanceWidget extends BaseWidget
                             ->whereYear('tanggal', now()->year)
                             ->sum('jumlah');
                     })
-                    ->formatStateUsing(fn($state) => 'Rp ' . Number::format($state ?? 0, locale: 'id'))
+                    ->formatStateUsing(fn ($state) => 'Rp ' . Number::format($state ?? 0, locale: 'id'))
                     ->badge()
                     ->color('success')
                     ->size('lg'),
@@ -131,12 +132,12 @@ class UnitPerformanceWidget extends BaseWidget
                             ->whereMonth('tanggal', now()->month)
                             ->whereYear('tanggal', now()->year)
                             ->sum('jumlah');
-
+                        
                         $pengeluaran = $record->pengeluarans()
                             ->whereMonth('tanggal', now()->month)
                             ->whereYear('tanggal', now()->year)
                             ->sum('jumlah');
-
+                        
                         $net = $pemasukan - $pengeluaran;
                         return 'Rp ' . Number::format($net, locale: 'id');
                     })
@@ -147,12 +148,12 @@ class UnitPerformanceWidget extends BaseWidget
                             ->whereMonth('tanggal', now()->month)
                             ->whereYear('tanggal', now()->year)
                             ->sum('jumlah');
-
+                        
                         $pengeluaran = $record->pengeluarans()
                             ->whereMonth('tanggal', now()->month)
                             ->whereYear('tanggal', now()->year)
                             ->sum('jumlah');
-
+                        
                         $net = $pemasukan - $pengeluaran;
                         return $net >= 0 ? 'success' : 'danger';
                     }),

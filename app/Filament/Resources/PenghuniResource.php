@@ -25,6 +25,12 @@ class PenghuniResource extends Resource
     protected static ?string $navigationLabel = 'Data Penghuni';
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->hasRole(['Superadmin', 'Admin', 'Owner']);
+    }
+
+
     // QUERY BARU
     // public static function getEloquentQuery(): Builder
     // {

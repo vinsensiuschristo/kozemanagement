@@ -11,49 +11,55 @@
             @forelse($units as $unit)
                 <x-filament::card class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     <div class="space-y-4">
-                        <!-- Unit Info dan Room Status dalam satu baris -->
-                        <div class="flex items-center justify-between">
-                            <!-- Unit Info (Kiri) -->
+                        <!-- Unit Info dan Room Status -->
+                        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                            <!-- Unit Info -->
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-2 mb-1">
-                                    <h3 class="font-semibold text-gray-900 dark:text-white truncate cursor-pointer hover:text-primary-600 transition-colors"
+                                    <h3 class="font-semibold text-gray-900 dark:text-white truncate cursor-pointer hover:text-primary-600 transition-colors text-sm sm:text-base"
                                         onclick="window.location.href='/admin/units/{{ $unit['id'] }}/room-layout'">
                                         {{ $unit['nama'] }}
                                     </h3>
                                 </div>
                                 
-                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-2 truncate">
+                                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2 truncate">
                                     {{ $unit['alamat'] }}
                                 </p>
                                 
-                                <div class="flex flex-wrap items-center gap-3 text-xs">
-                                    <x-filament::badge color="gray">
-                                        Total: {{ $unit['total_rooms'] }} kamar
+                                <div class="flex flex-wrap items-center gap-2 text-xs">
+                                    <x-filament::badge color="gray" size="sm">
+                                        Total: {{ $unit['total_rooms'] }}
                                     </x-filament::badge>
                                     
-                                    <x-filament::badge color="success">
+                                    <x-filament::badge color="success" size="sm">
                                         Tersedia: {{ $unit['available_rooms'] }}
                                     </x-filament::badge>
                                     
-                                    <x-filament::badge color="danger">
+                                    <x-filament::badge color="danger" size="sm">
                                         Terisi: {{ $unit['occupied_rooms'] }}
                                     </x-filament::badge>
+
+                                    @if($unit['booked_rooms'] > 0)
+                                        <x-filament::badge color="warning" size="sm">
+                                            Booked: {{ $unit['booked_rooms'] }}
+                                        </x-filament::badge>
+                                    @endif
                                 </div>
                             </div>
 
-                            <!-- Room Status (Kanan) -->
-                            <div class="ml-4 flex-shrink-0">
-                                <div class="flex flex-wrap gap-2 justify-end">
+                            <!-- Room Status Grid -->
+                            <div class="flex-shrink-0 w-full lg:w-auto">
+                                <div class="grid grid-cols-4 sm:grid-cols-6 lg:flex lg:flex-wrap gap-1 sm:gap-2 justify-end">
                                     @forelse($unit['rooms'] as $room)
                                         <div x-data="{ 
                                             tooltip: false,
-                                            tooltipText: 'Kamar {{ $room['nama'] }} - {{ ucfirst($room['status']) }}{{ $room['status'] === 'terisi' && $room['penghuni'] ? ' - ' . $room['penghuni']['nama'] : '' }}'
+                                            tooltipText: 'Kamar {{ $room['nama'] }} - {{ ucfirst($room['status']) }}{{ ($room['status'] === 'terisi' || $room['status'] === 'booked') && $room['penghuni'] ? ' - ' . $room['penghuni']['nama'] . ' (' . ($room['penghuni']['no_telp'] ?? 'No telp') . ')' : '' }}'
                                         }" 
                                         class="relative">
                                             <x-filament::badge 
-                                                :color="$room['status'] === 'terisi' ? 'danger' : 'success'"
+                                                :color="$room['status'] === 'terisi' ? 'danger' : ($room['status'] === 'booked' ? 'warning' : 'success')"
                                                 size="sm"
-                                                class="px-3 py-2 cursor-pointer hover:scale-105 transition-transform text-xs font-medium"
+                                                class="w-full px-2 py-1 cursor-pointer hover:scale-105 transition-transform text-xs font-medium min-w-0 truncate"
                                                 @mouseenter="tooltip = true"
                                                 @mouseleave="tooltip = false"
                                                 wire:click.stop="showRoomDetail('{{ $room['nama'] }}')">
@@ -62,19 +68,19 @@
                                             
                                             <!-- Custom Tooltip -->
                                             <div x-show="tooltip" 
-                                                x-transition:enter="transition ease-out duration-200"
-                                                x-transition:enter-start="opacity-0 transform scale-95"
-                                                x-transition:enter-end="opacity-100 transform scale-100"
-                                                x-transition:leave="transition ease-in duration-75"
-                                                x-transition:leave-start="opacity-100 transform scale-100"
-                                                x-transition:leave-end="opacity-0 transform scale-95"
-                                                class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs font-medium dark:text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap z-50"
-                                                x-text="tooltipText"
-                                                style="display: none;">
+                                                 x-transition:enter="transition ease-out duration-200"
+                                                 x-transition:enter-start="opacity-0 transform scale-95"
+                                                 x-transition:enter-end="opacity-100 transform scale-100"
+                                                 x-transition:leave="transition ease-in duration-75"
+                                                 x-transition:leave-start="opacity-100 transform scale-100"
+                                                 x-transition:leave-end="opacity-0 transform scale-95"
+                                                 class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap z-50 max-w-xs"
+                                                 x-text="tooltipText"
+                                                 style="display: none;">
                                             </div>
                                         </div>
                                     @empty
-                                        <span class="text-xs text-gray-500 dark:text-gray-400">Tidak ada kamar</span>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400 col-span-full text-center">Tidak ada kamar</span>
                                     @endforelse
                                 </div>
                             </div>
@@ -82,17 +88,21 @@
 
                         <!-- Legend -->
                         <div class="border-t pt-3">
-                            <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                            <div class="flex flex-wrap items-center gap-3 sm:gap-4 text-xs text-gray-500 dark:text-gray-400">
                                 <div class="flex items-center gap-1">
                                     <div class="w-3 h-3 bg-green-500 rounded"></div>
                                     <span>Tersedia</span>
                                 </div>
                                 <div class="flex items-center gap-1">
+                                    <div class="w-3 h-3 bg-yellow-500 rounded"></div>
+                                    <span>Booked</span>
+                                </div>
+                                <div class="flex items-center gap-1">
                                     <div class="w-3 h-3 bg-red-500 rounded"></div>
                                     <span>Terisi</span>
                                 </div>
-                                <div class="text-gray-400 dark:text-gray-500">
-                                    Klik kamar untuk detail penghuni
+                                <div class="text-gray-400 dark:text-gray-500 hidden sm:block">
+                                    Klik kamar untuk detail
                                 </div>
                             </div>
                         </div>
@@ -124,7 +134,7 @@
             <div class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <x-filament::badge :color="$roomDetail['status'] === 'terisi' ? 'danger' : 'success'">
+                        <x-filament::badge :color="$roomDetail['status'] === 'terisi' ? 'danger' : ($roomDetail['status'] === 'booked' ? 'warning' : 'success')">
                             {{ ucfirst($roomDetail['status']) }}
                         </x-filament::badge>
                     </div>
@@ -150,10 +160,12 @@
                     </div>
                 </x-filament::card>
 
-                @if($roomDetail['status'] === 'terisi' && $roomDetail['penghuni'])
+                @if(($roomDetail['status'] === 'terisi' || $roomDetail['status'] === 'booked') && $roomDetail['penghuni'])
                     <x-filament::card>
                         <div class="space-y-3">
-                            <h4 class="font-semibold text-gray-900 dark:text-white">Informasi Penghuni</h4>
+                            <h4 class="font-semibold text-gray-900 dark:text-white">
+                                {{ $roomDetail['status'] === 'booked' ? 'Informasi Pemesan' : 'Informasi Penghuni' }}
+                            </h4>
                             
                             <div class="grid grid-cols-1 gap-3">
                                 <div>
@@ -179,7 +191,9 @@
                                 @endif
                                 
                                 <div>
-                                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Check-in:</span>
+                                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        {{ $roomDetail['status'] === 'booked' ? 'Tanggal Booking:' : 'Check-in:' }}
+                                    </span>
                                     <p class="text-sm text-gray-900 dark:text-white">{{ $roomDetail['penghuni']['checkin'] }}</p>
                                 </div>
                                 

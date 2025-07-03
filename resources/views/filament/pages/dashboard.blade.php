@@ -4,18 +4,36 @@
         $isOwner = $user && $user->hasRole('Owner');
         $isSuperadmin = $user && $user->hasRole('Superadmin');
         $isAdmin = $user && ($user->hasRole('Superadmin') || $user->hasRole('Admin'));
+        $isUser = $user && $user->hasRole('User');
     @endphp
 
     <div class="space-y-6">
-        @if($isOwner)
+        @if($isUser)
+            {{-- User Dashboard --}}
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Dashboard Penghuni</h1>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Welcome back, {{ auth()->user()->name ?? 'User' }}</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                        {{ now()->format('l, d F Y') }} • {{ now()->format('H:i') }} WIB
+                    </div>
+                </div>
+            </div>
+
+            {{-- User Ticketing Widget --}}
+            @livewire(\App\Filament\Widgets\UserTicketingWidget::class)
+
+        @elseif($isOwner)
             {{-- Owner Dashboard --}}
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Dashboard Owner</h1>
+                    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Dashboard Owner</h1>
                     <p class="text-sm text-gray-600 dark:text-gray-400">Welcome back, {{ $ownerData?->nama ?? auth()->user()->name ?? 'Owner' }}</p>
                 </div>
                 <div class="flex items-center gap-4">
-                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                    <div class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                         {{ now()->format('l, d F Y') }} • {{ now()->format('H:i') }} WIB
                     </div>
                 </div>
@@ -29,36 +47,28 @@
             {{-- Owner Units Widget --}}
             @livewire(\App\Filament\Widgets\OwnerUnitsWidget::class)
 
-            {{-- Trend Jumlah Penghuni - Full Width --}}
-            <div class="w-full">
-                @livewire(\App\Filament\Widgets\RevenueTrendChart::class)
-            </div>
-
             {{-- Konfirmasi Stats Widget --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 @livewire(\App\Filament\Widgets\KonfirmasiStatsWidget::class)
             </div>
 
-            {{-- Owner Quick Actions Widget --}}
-            @livewire(\App\Filament\Widgets\OwnerQuickActionsWidget::class)
-
-        @elseif($isAdmin)
-            {{-- Admin/Superadmin Dashboard --}}
+        @elseif($isAdmin && !$isUser)
+            {{-- Admin/Superadmin Dashboard - HANYA untuk Admin dan Superadmin, BUKAN User --}}
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                         Dashboard {{ $isSuperadmin ? 'Superadmin' : 'Admin' }}
                     </h1>
                     <p class="text-sm text-gray-600 dark:text-gray-400">Welcome back, {{ auth()->user()->name ?? 'Admin' }}</p>
                 </div>
                 <div class="flex items-center gap-4">
-                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                    <div class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                         {{ now()->format('l, d F Y') }} • {{ now()->format('H:i') }} WIB
                     </div>
                 </div>
             </div>
 
-            {{-- Stats Overview --}}
+            {{-- Stats Overview - HANYA untuk Admin dan Superadmin --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 @livewire(\App\Filament\Widgets\StatsOverviewWidget::class)
             </div>
@@ -67,9 +77,6 @@
             @if($isSuperadmin)
                 @livewire(\App\Filament\Widgets\SuperadminUnitsWidget::class)
             @endif
-
-            {{-- Performance Tables --}}
-            @livewire(\App\Filament\Widgets\TopPerformingUnitsWidget::class)
 
             @livewire(\App\Filament\Widgets\UnitPerformanceWidget::class)
 

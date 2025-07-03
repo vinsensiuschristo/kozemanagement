@@ -20,7 +20,8 @@ class StatsOverviewWidget extends BaseWidget
     public static function canView(): bool
     {
         $user = Auth::user();
-        return $user && !$user->hasRole('Owner');
+        // HANYA untuk Superadmin dan Admin, BUKAN untuk User
+        return $user && ($user->hasRole('Superadmin') || $user->hasRole('Admin')) && !$user->hasRole('User');
     }
 
     protected function getStats(): array

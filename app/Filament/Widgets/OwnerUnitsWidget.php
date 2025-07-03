@@ -80,6 +80,7 @@ class OwnerUnitsWidget extends Widget
                 'total_rooms' => count($sortedRooms),
                 'occupied_rooms' => collect($sortedRooms)->where('status', 'terisi')->count(),
                 'available_rooms' => collect($sortedRooms)->where('status', 'kosong')->count(),
+                'booked_rooms' => collect($sortedRooms)->where('status', 'booked')->count(),
             ];
         });
 
@@ -117,7 +118,20 @@ class OwnerUnitsWidget extends Widget
                 }
             }
             
-            $penghuni = $activeLog?->penghuni;
+            // Untuk status booked, cari penghuni yang booking
+            $bookedPenghuni = null;
+            if ($status === 'booked') {
+                // Cari log booking terakhir
+                $bookingLog = LogPenghuni::where('kamar_id', $kamar->id)
+                    ->where('status', 'booking')
+                    ->with('penghuni')
+                    ->orderBy('tanggal', 'desc')
+                    ->first();
+                
+                $bookedPenghuni = $bookingLog?->penghuni;
+            }
+            
+            $penghuni = $activeLog?->penghuni ?? $bookedPenghuni;
             
             // Format tanggal dengan aman
             $checkinDate = 'Tidak diketahui';
@@ -143,7 +157,7 @@ class OwnerUnitsWidget extends Widget
                 'penghuni' => $penghuni ? [
                     'nama' => $penghuni->nama ?? 'Tidak ada nama',
                     'no_telp' => $penghuni->no_telp ?? 'Tidak ada',
-                    'telepon' => $penghuni->no_telp ?? 'Tidak ada',
+                    'telepon' => $penghuni->no_telp ?? 'Tidak ada', // Untuk backward compatibility
                     'email' => $penghuni->email ?? 'Tidak ada',
                     'checkin' => $checkinDate,
                     'deposit' => isset($activeLog->deposit) ? 'Rp ' . number_format($activeLog->deposit, 0, ',', '.') : 'Tidak ada data',

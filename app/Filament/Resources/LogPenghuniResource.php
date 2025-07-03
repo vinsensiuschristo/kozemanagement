@@ -74,6 +74,11 @@ class LogPenghuniResource extends Resource
             ]);
     }
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->hasRole(['Superadmin', 'Admin', 'Owner']);
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()
