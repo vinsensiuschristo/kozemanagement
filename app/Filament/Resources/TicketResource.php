@@ -58,6 +58,17 @@ class TicketResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
+        // Hanya user (bukan admin)
+        if (auth()->user()?->hasRole('User')) {
+            // Hitung jumlah pesan yang belum dibaca oleh user ini
+            return \App\Models\TicketMessage::whereHas('ticket', function ($query) {
+                    $query->where('user_id', auth()->id());
+                })
+                ->where('user_id', '!=', auth()->id()) // dari admin
+                ->whereNull('read_at') // belum dibaca
+                ->count();
+        }
+
         if (auth()->user()?->hasRole('Admin')) {
             return (string) Ticket::where('status', 'Baru')->count();
         }
@@ -182,12 +193,20 @@ class TicketResource extends Resource
 
                 ])
                 ->actions([
-                    Tables\Actions\EditAction::make(),
+                    // Tables\Actions\EditAction::make(),
                     Tables\Actions\Action::make('Balas')
                         ->label('Balas')
                         ->icon('heroicon-m-chat-bubble-left-ellipsis')
                         ->url(fn (Model $record) => TicketResource::getUrl('response', ['record' => $record]))
                         ->visible(fn () => auth()->user()?->hasRole('Admin')),
+
+                    // Percakapan Ticket
+                    Tables\Actions\Action::make('Percakapan')
+                        ->label('Percakapan')
+                        ->icon('heroicon-m-chat-bubble-left')
+                        ->url(fn (Model $record) => TicketResource::getUrl('conversation', ['record' => $record->id]))
+                        ->visible(fn () => auth()->user()?->hasRole('User')),
+
                 ])
                 ->bulkActions([
                     Tables\Actions\DeleteBulkAction::make(),
@@ -208,6 +227,7 @@ class TicketResource extends Resource
             'create' => Pages\CreateTicket::route('/create'),
             'edit' => Pages\EditTicket::route('/{record}/edit'),
             'response' => Pages\TicketResponse::route('/{record}/response'),
+            'conversation' => Pages\TicketConversation::route('/{record}/conversation'),
         ];
     }
 }

@@ -17,6 +17,10 @@ class TicketMessage extends Model
         'message',
     ];
 
+    protected $casts = [
+        'read_at' => 'datetime',
+    ];
+
     public function ticket()
     {
         return $this->belongsTo(Ticket::class);
