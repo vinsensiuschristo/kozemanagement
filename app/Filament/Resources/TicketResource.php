@@ -186,6 +186,7 @@ class TicketResource extends Resource
                     Tables\Actions\Action::make('Balas')
                         ->label('Balas')
                         ->icon('heroicon-m-chat-bubble-left-ellipsis')
+                        ->url(fn (Model $record) => TicketResource::getUrl('response', ['record' => $record]))
                         ->visible(fn () => auth()->user()?->hasRole('Admin')),
                 ])
                 ->bulkActions([
@@ -206,6 +207,7 @@ class TicketResource extends Resource
             'index' => Pages\ListTickets::route('/'),
             'create' => Pages\CreateTicket::route('/create'),
             'edit' => Pages\EditTicket::route('/{record}/edit'),
+            'response' => Pages\TicketResponse::route('/{record}/response'),
         ];
     }
 }

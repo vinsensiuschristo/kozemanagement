@@ -40,4 +40,9 @@ class Ticket extends Model
     {
         return $this->belongsTo(Kamar::class);
     }
+
+    public function messages()
+    {
+        return $this->hasMany(TicketMessage::class);
+    }
 }
