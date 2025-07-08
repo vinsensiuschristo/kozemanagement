@@ -28,6 +28,7 @@ class Penghuni extends Model
         'foto_ktp',
         'referensi',
         'status',
+        'user_id',
     ];
 
     protected static function booted()
@@ -41,5 +42,10 @@ class Penghuni extends Model
     public function logs()
     {
         return $this->hasMany(LogPenghuni::class, 'penghuni_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

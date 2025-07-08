@@ -8,10 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Ticket extends Model
 {
-    use HasFactory, HasUuids;
-
-    public $incrementing = false;
-    protected $keyType = 'uuid';
+    use HasUuids;
 
     protected $fillable = [
         'user_id',
@@ -23,15 +20,10 @@ class Ticket extends Model
         'prioritas',
         'status',
         'foto',
-        'tanggal_lapor',
-        'tanggal_selesai',
         'response_admin',
         'rating',
-    ];
-
-    protected $casts = [
-        'tanggal_lapor' => 'datetime',
-        'tanggal_selesai' => 'datetime',
+        'tanggal_selesai',
+        'tanggal_lapor',
     ];
 
     public function user()
@@ -47,27 +39,5 @@ class Ticket extends Model
     public function kamar()
     {
         return $this->belongsTo(Kamar::class);
-    }
-
-    public function getStatusColorAttribute()
-    {
-        return match($this->status) {
-            'open' => 'danger',
-            'in_progress' => 'warning', 
-            'resolved' => 'success',
-            'closed' => 'gray',
-            default => 'gray'
-        };
-    }
-
-    public function getPrioritasColorAttribute()
-    {
-        return match($this->prioritas) {
-            'low' => 'success',
-            'medium' => 'warning',
-            'high' => 'danger',
-            'urgent' => 'danger',
-            default => 'gray'
-        };
     }
 }

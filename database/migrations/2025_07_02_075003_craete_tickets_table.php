@@ -13,17 +13,17 @@ return new class extends Migration
     {
         Schema::create('tickets', function (Blueprint $table) {
             // Gunakan UUID untuk primary key
-            $table->uuid()->primary();
+            $table->uuid('id')->primary();
 
-            // Kolom yang diperlukan
+
             $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('unit_id');
-            $table->unsignedBigInteger('kamar_id');
+            $table->uuid('unit_id');
+            $table->uuid('kamar_id');
 
             // Detail Laporan
             $table->string('judul');
             $table->text('deskripsi');
-            $table->string('kategori'); // Bisa juga enum jika kategorinya tetap
+            $table->enum('kategori', ['Kebocoran', 'Kerusakan', 'Layanan', 'Penghuni', 'Keamanan', 'Lainnya']); 
 
             // Enum untuk kolom dengan pilihan terbatas
             $table->enum('prioritas', ['Rendah', 'Sedang', 'Tinggi'])->default('Sedang');
@@ -40,6 +40,10 @@ return new class extends Migration
 
             // Timestamps (created_at dan updated_at)
             $table->timestamps();
+
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreign('unit_id')->references('id')->on('units')->cascadeOnDelete();
+            $table->foreign('kamar_id')->references('id')->on('kamars')->cascadeOnDelete();
         });
     }
 

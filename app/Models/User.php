@@ -84,4 +84,9 @@ class User extends Authenticatable implements FilamentUser, CanResetPassword
     {
         return $this->hasOne(Owner::class, 'user_id', 'id');
     }
+
+    public function penghuni()
+    {
+        return $this->hasOne(Penghuni::class, 'user_id');
+    }
 }
