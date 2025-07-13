@@ -1947,6 +1947,27 @@ class LogPenghuniSeeder extends Seeder
     1944 => '92b8e525-843d-4eca-9fb3-4a78e75e680a',
     1945 => '1b2ed799-13ac-4672-bd1d-362a6a0f4a06',
     1946 => '82e991db-5be0-4785-8ae9-4e8a49910aca',
+
+    // disini
+    1947=>	"9e6a845b-fe14-406b-a1a7-04035904048f",
+    1948=>	"b1d7ba4f-7a68-4207-a988-8b60ce42dc33",
+    1949=>	"0957ff81-30eb-4459-8c75-442c2eeb9100",
+    1950=>	"21f42707-9338-4ccd-8d12-7c82ffc48ffe",
+    1951=>	"580f746e-cc35-4921-871b-f0060b46bad6",
+    1952=>	"7cfd4735-d56c-484b-af21-8f59fecdbe5d",
+    1953=>	"4068e00a-381c-4097-be6d-52549f46facd",
+    1954=>	"a5649fca-943e-4afc-9363-9f8bb3c5f69d",
+    1955=>	"31776013-950b-4a85-8549-f6b9272ab232",
+    1956=>	"f00e0862-bd51-44d7-8079-98a6df872637",
+    1957=>	"a0f6d94a-f31e-4cd8-8adb-9a7c53904c57",
+    1958=>	"fab68535-8314-4786-9a39-e83de6619749",
+    1959=>	"59122a9d-3347-4407-92ee-a58b63434bdc",
+    1960=>	"74609ec1-ce62-4a59-beb1-cec8fa72cb1c",
+    1961=>	"71722fb6-6b86-4711-9991-d5f4f72576be",
+    1962=>	"0d1372de-4d3c-48e2-b32a-0bb6d1db1df9",
+    1963=>	"122123ab-848c-45d3-b579-2097b1213dbb",
+    1964=>	"04f185fb-6510-4d5f-ad8f-91244be185b7",
+    1965=>	"8d55cf6c-cef9-4b36-924d-cb1f01d2b112",
 ];
 
         // $kamarMapping = [
@@ -3189,7 +3210,7 @@ $kamarMapping = [
 $logLama = DB::connection('mysql_koze30')->table('logpenghuni')->get();
 
 // Ambil tanggal terendah yang valid dari data lama
-$minValidDate = DB::connection('mysql_koze30')
+$minValidDate = DB::connection('mysql_koze13Juli')
     ->table('logpenghuni')
     ->where('Tanggal', '!=', '0000-00-00')
     ->min('Tanggal');

@@ -140,6 +140,20 @@ return [
             'engine' => null,
         ],
 
+        'mysql_koze13Juli' => [
+            'driver' => 'mysql',
+            'host' => env('DB_LAMA_HOST', '127.0.0.1'),
+            'port' => env('DB_LAMA_PORT', '3306'),
+            'database' => env('DB_LAMA_DATABASE', 'kozemanagement_13_07'),
+            'username' => env('DB_LAMA_USERNAME', 'root'),
+            'password' => env('DB_LAMA_PASSWORD', 'rootpassword'),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+        ],
+
     ],
 
     /*
