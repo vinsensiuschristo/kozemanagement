@@ -48,4 +48,17 @@ class Penghuni extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    public function latestKamar()
+    {
+        return $this->hasOne(LogPenghuni::class)
+            ->latest('tanggal') // Ambil log terbaru
+            ->where('status', 'in');
+    }
+
+    public function vouchers()
+    {
+        return $this->hasMany(PenghuniVoucher::class);
+    }
+
 }

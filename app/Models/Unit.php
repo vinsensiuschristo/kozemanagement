@@ -91,4 +91,10 @@ class Unit extends Model
     {
         return $this->hasMany(Pengeluaran::class, 'unit_id');
     }
+
+    public function voucherRules()
+    {
+        return $this->hasMany(UnitVoucherRule::class, 'unit_id');
+    }
+
 }
