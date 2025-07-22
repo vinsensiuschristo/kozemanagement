@@ -5,7 +5,7 @@
             <div class="flex items-center">
                 <div class="flex-shrink-0">
                     <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
                     </svg>
                 </div>
                 <div class="ml-3">
@@ -48,7 +48,7 @@
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
                             <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 014.438 0 2.5 2.5 0 001.946.806 2.5 2.5 0 013.138 3.138 2.5 2.5 0 00.806 1.946 2.5 2.5 0 010 4.438 2.5 2.5 0 00-.806 1.946 2.5 2.5 0 01-3.138 3.138 2.5 2.5 0 00-1.946.806 2.5 2.5 0 01-4.438 0 2.5 2.5 0 00-1.946-.806 2.5 2.5 0 01-3.138-3.138 2.5 2.5 0 00-.806-1.946 2.5 2.5 0 010-4.438 2.5 2.5 0 00.806-1.946 2.5 2.5 0 013.138-3.138z" />
                             </svg>
                         </div>
                         <div class="ml-5 w-0 flex-1">
@@ -89,16 +89,13 @@
         </div>
 
         <!-- Form -->
-        <div class="bg-white shadow rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <form wire:submit="assignVoucher">
-                    {{ $this->form }}
-                    
-                    <div class="mt-6 flex justify-end">
-                        {{ $this->getFormActions()[0] }}
-                    </div>
-                </form>
-            </div>
-        </div>
+        <x-filament-panels::form wire:submit="assignVoucher">
+            {{ $this->form }}
+            
+            <x-filament-panels::form.actions
+                :actions="$this->getCachedFormActions()"
+                :full-width="$this->hasFullWidthFormActions()"
+            />
+        </x-filament-panels::form>
     </div>
 </x-filament-panels::page>

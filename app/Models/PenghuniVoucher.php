@@ -2,25 +2,24 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class PenghuniVoucher extends Model
 {
-    use HasUuids;
+    use HasFactory;
 
-    public $incrementing = false;
     protected $keyType = 'string';
-
-    protected $table = 'penghuni_vouchers';
+    public $incrementing = false;
 
     protected $fillable = [
         'penghuni_id',
         'voucher_id',
         'is_used',
-        'digunakan_pada_mitra_id',
         'tanggal_digunakan',
+        'mitra_id',
     ];
 
     protected $casts = [
@@ -28,36 +27,56 @@ class PenghuniVoucher extends Model
         'tanggal_digunakan' => 'datetime',
     ];
 
-    public function penghuni()
+    protected static function boot()
     {
-        return $this->belongsTo(Penghuni::class, 'penghuni_id');
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = (string) Str::uuid();
+            }
+        });
     }
 
-    public function voucher()
+    public function penghuni(): BelongsTo
     {
-        return $this->belongsTo(Voucher::class, 'voucher_id');
+        return $this->belongsTo(Penghuni::class);
     }
 
-    public function mitraDigunakan()
+    public function voucher(): BelongsTo
     {
-        return $this->belongsTo(Mitra::class, 'digunakan_pada_mitra_id');
+        return $this->belongsTo(Voucher::class);
     }
 
-    public function gunakan($mitraId = null)
+    public function mitra(): BelongsTo
     {
+        return $this->belongsTo(Mitra::class);
+    }
+
+    // Method untuk menggunakan voucher
+    public function gunakan(?int $mitraId = null): bool
+    {
+        if ($this->is_used) {
+            return false;
+        }
+
         $this->update([
             'is_used' => true,
-            'digunakan_pada_mitra_id' => $mitraId,
-            'tanggal_digunakan' => Carbon::now(),
+            'tanggal_digunakan' => now(),
+            'mitra_id' => $mitraId ?? $this->voucher->mitra_id,
         ]);
+
+        return true;
     }
 
-    public function scopeBelumDigunakan($query)
+    // Scope untuk voucher yang belum digunakan
+    public function scopeTersedia($query)
     {
         return $query->where('is_used', false);
     }
 
-    public function scopeSudahDigunakan($query)
+    // Scope untuk voucher yang sudah digunakan
+    public function scopeTerpakai($query)
     {
         return $query->where('is_used', true);
     }

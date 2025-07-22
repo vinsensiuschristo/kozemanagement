@@ -4,28 +4,32 @@ namespace App\Filament\Pages;
 
 use App\Models\PenghuniVoucher;
 use App\Models\Mitra;
-use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Pages\Page;
-use Filament\Actions\Action;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 
-class RedeemVoucher extends Page
+class RedeemVoucher extends Page implements HasForms
 {
-    protected static ?string $navigationIcon = 'heroicon-o-qr-code';
+    use InteractsWithForms;
+
+    protected static ?string $navigationIcon = 'heroicon-o-ticket';
     protected static string $view = 'filament.pages.redeem-voucher';
-    protected static ?string $navigationLabel = 'Redeem Voucher';
     protected static ?string $title = 'Redeem Voucher';
-    protected static ?string $navigationGroup = 'Voucher';
+    protected static ?string $navigationLabel = 'Redeem Voucher';
+    protected static ?int $navigationSort = 1;
 
     public ?array $data = [];
-    public ?PenghuniVoucher $voucherFound = null;
+    public ?PenghuniVoucher $foundVoucher = null;
     public bool $showVoucherDetail = false;
 
     public static function canAccess(): bool
     {
-        return Auth::user()->hasRole('Mitra');
+        return auth()->user()?->hasRole('Mitra');
     }
 
     public function mount(): void
@@ -37,89 +41,85 @@ class RedeemVoucher extends Page
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Cari Voucher')
-                    ->description('Masukkan kode voucher yang ingin di-redeem')
+                Section::make('Scan atau Input Kode Voucher')
+                    ->description('Masukkan kode voucher yang ingin diredeem')
                     ->schema([
-                        Forms\Components\TextInput::make('kode_voucher')
+                        TextInput::make('kode_voucher')
                             ->label('Kode Voucher')
                             ->placeholder('Masukkan kode voucher...')
                             ->required()
-                            ->maxLength(255)
-                            ->suffixAction(
-                                Forms\Components\Actions\Action::make('cari')
-                                    ->icon('heroicon-m-magnifying-glass')
-                                    ->action('cariVoucher')
-                            ),
-                    ])
-                    ->columns(1),
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state) {
+                                if ($state) {
+                                    $this->searchVoucher($state);
+                                }
+                            }),
+                    ]),
             ])
             ->statePath('data');
     }
 
-    public function cariVoucher(): void
+    public function searchVoucher(string $kodeVoucher): void
     {
-        $this->validate([
-            'data.kode_voucher' => 'required|string',
-        ]);
+        $this->foundVoucher = null;
+        $this->showVoucherDetail = false;
 
-        $kodeVoucher = $this->data['kode_voucher'];
-        $user = Auth::user();
-        $mitra = $user->mitra;
-
-        if (!$mitra) {
-            Notification::make()
-                ->title('Error')
-                ->body('Akun Anda tidak terhubung dengan mitra manapun.')
-                ->danger()
-                ->send();
+        if (empty($kodeVoucher)) {
             return;
         }
 
         // Cari voucher berdasarkan kode
-        $voucher = PenghuniVoucher::whereHas('voucher', function ($query) use ($kodeVoucher, $mitra) {
-            $query->where('kode_voucher', $kodeVoucher)
-                ->where('mitra_id', $mitra->id);
-        })
-            ->with(['voucher.mitra', 'penghuni'])
+        $voucher = PenghuniVoucher::with(['voucher', 'penghuni', 'digunakan_pada_mitra'])
+            ->whereHas('voucher', function ($query) use ($kodeVoucher) {
+                $query->where('kode_voucher', $kodeVoucher);
+            })
             ->first();
 
         if (!$voucher) {
             Notification::make()
                 ->title('Voucher Tidak Ditemukan')
-                ->body('Kode voucher tidak ditemukan atau bukan untuk mitra Anda.')
-                ->warning()
+                ->body('Kode voucher yang Anda masukkan tidak valid.')
+                ->danger()
                 ->send();
-
-            $this->voucherFound = null;
-            $this->showVoucherDetail = false;
             return;
         }
 
+        // Cek apakah voucher sudah digunakan
         if ($voucher->is_used) {
             Notification::make()
                 ->title('Voucher Sudah Digunakan')
-                ->body('Voucher ini sudah pernah digunakan pada ' . $voucher->tanggal_digunakan?->format('d M Y H:i'))
+                ->body('Voucher ini telah digunakan pada ' . $voucher->tanggal_digunakan?->format('d M Y H:i'))
                 ->warning()
                 ->send();
-
-            $this->voucherFound = $voucher;
+            $this->foundVoucher = $voucher;
             $this->showVoucherDetail = true;
             return;
         }
 
-        $this->voucherFound = $voucher;
+        // Cek apakah voucher untuk mitra ini
+        $userMitra = Auth::user()->mitra;
+        if (!$userMitra || $voucher->voucher->mitra_id !== $userMitra->id) {
+            Notification::make()
+                ->title('Voucher Bukan Untuk Mitra Ini')
+                ->body('Voucher ini tidak dapat digunakan di mitra Anda.')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        $this->foundVoucher = $voucher;
         $this->showVoucherDetail = true;
 
         Notification::make()
-            ->title('Voucher Ditemukan!')
-            ->body('Voucher valid dan siap untuk di-redeem.')
+            ->title('Voucher Valid!')
+            ->body('Voucher ditemukan dan siap untuk diredeem.')
             ->success()
             ->send();
     }
 
     public function redeemVoucher(): void
     {
-        if (!$this->voucherFound || $this->voucherFound->is_used) {
+        if (!$this->foundVoucher || $this->foundVoucher->is_used) {
             Notification::make()
                 ->title('Error')
                 ->body('Voucher tidak valid atau sudah digunakan.')
@@ -128,46 +128,35 @@ class RedeemVoucher extends Page
             return;
         }
 
-        $user = Auth::user();
-        $mitra = $user->mitra;
+        $userMitra = Auth::user()->mitra;
 
         try {
-            $this->voucherFound->gunakan($mitra->id);
+            $this->foundVoucher->gunakan($userMitra->id);
 
             Notification::make()
-                ->title('Voucher Berhasil Di-redeem!')
-                ->body("Voucher '{$this->voucherFound->voucher->nama}' telah berhasil di-redeem untuk penghuni {$this->voucherFound->penghuni->nama}")
+                ->title('Voucher Berhasil Diredeem!')
+                ->body('Voucher telah berhasil digunakan.')
                 ->success()
                 ->send();
 
             // Reset form
-            $this->data = [];
-            $this->voucherFound = null;
-            $this->showVoucherDetail = false;
             $this->form->fill();
+            $this->foundVoucher = null;
+            $this->showVoucherDetail = false;
 
         } catch (\Exception $e) {
             Notification::make()
                 ->title('Error')
-                ->body('Terjadi kesalahan saat redeem voucher: ' . $e->getMessage())
+                ->body('Terjadi kesalahan: ' . $e->getMessage())
                 ->danger()
                 ->send();
         }
     }
 
-    protected function getHeaderActions(): array
+    public function resetForm(): void
     {
-        return [
-            Action::make('refresh')
-                ->label('Reset Form')
-                ->icon('heroicon-o-arrow-path')
-                ->color('gray')
-                ->action(function () {
-                    $this->data = [];
-                    $this->voucherFound = null;
-                    $this->showVoucherDetail = false;
-                    $this->form->fill();
-                }),
-        ];
+        $this->form->fill();
+        $this->foundVoucher = null;
+        $this->showVoucherDetail = false;
     }
 }

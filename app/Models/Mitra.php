@@ -2,37 +2,31 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Mitra extends Model
 {
-    use HasUuids;
-    public $incrementing = false;
-    protected $keyType = 'string';
+    use HasFactory;
 
-    protected $table = 'mitras';
     protected $fillable = [
         'nama',
-        'kategori',
-        'telepon',
         'alamat',
+        'telepon',
+        'email',
         'deskripsi',
         'user_id',
     ];
 
-    public function user()
+    public function vouchers(): HasMany
+    {
+        return $this->hasMany(Voucher::class);
+    }
+
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function vouchers()
-    {
-        return $this->hasMany(Voucher::class, 'mitra_id');
-    }
-
-    public function penggunaanVouchers()
-    {
-        return $this->hasMany(PenghuniVoucher::class, 'digunakan_pada_mitra_id');
     }
 }

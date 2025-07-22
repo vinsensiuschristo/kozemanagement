@@ -4,31 +4,38 @@ namespace App\Filament\Resources\MitraResource\Pages;
 
 use App\Filament\Resources\MitraResource;
 use App\Models\User;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Database\Eloquent\Model;
+use Filament\Notifications\Notification;
+use Spatie\Permission\Models\Role;
 
 class CreateMitra extends CreateRecord
 {
     protected static string $resource = MitraResource::class;
 
-    protected function handleRecordCreation(array $data): Model
+    protected function mutateFormDataBeforeCreate(array $data): array
     {
+        // Pisahkan data user dari data mitra
+        $userData = [
+            'name' => $data['nama'],
+            'email' => $data['user_email'],
+            'password' => $data['user_password'],
+            'email_verified_at' => now(),
+        ];
+
+        // Hapus data user dari data mitra
+        unset($data['user_email'], $data['user_password']);
+
         // Buat user terlebih dahulu
-        $userData = $data['user'];
         $user = User::create($userData);
 
         // Assign role Mitra
-        $user->assignRole('Mitra');
+        $mitraRole = Role::firstOrCreate(['name' => 'Mitra']);
+        $user->assignRole($mitraRole);
 
-        // Hapus data user dari array data mitra
-        unset($data['user']);
-
-        // Buat mitra dan hubungkan dengan user
+        // Tambahkan user_id ke data mitra
         $data['user_id'] = $user->id;
-        $mitra = static::getModel()::create($data);
 
-        return $mitra;
+        return $data;
     }
 
     protected function getRedirectUrl(): string
@@ -36,8 +43,11 @@ class CreateMitra extends CreateRecord
         return $this->getResource()::getUrl('index');
     }
 
-    protected function getCreatedNotificationTitle(): ?string
+    protected function getCreatedNotification(): ?Notification
     {
-        return 'Mitra berhasil dibuat dengan akun login!';
+        return Notification::make()
+            ->success()
+            ->title('Mitra berhasil dibuat')
+            ->body('Mitra dan akun login telah berhasil dibuat.');
     }
 }

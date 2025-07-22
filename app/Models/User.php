@@ -7,49 +7,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Notifications\CustomResetPassword;
-use Filament\Models\Contracts\FilamentUser;
-use Illuminate\Contracts\Auth\CanResetPassword;
-use Illuminate\Support\Facades\Log;
 
-/**
- * @mixin \Spatie\Permission\Traits\HasRoles
- */
-
-class User extends Authenticatable implements FilamentUser, CanResetPassword
+class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRoles;
-
-    /**
-     * Determine if the user can access the given Filament panel.
-     *
-     * @param \Filament\Panel $panel
-     * @return bool
-     */
-    public function canAccessPanel(\Filament\Panel $panel): bool
-    {
-        // Allow all users to access the panel; adjust logic as needed.
-        return true;
-    }
-
-    // Custom notification reset password
-    public function sendPasswordResetNotification($token): void
-    {
-        Log::info('Attempting to send reset email to: ' . $this->email);
-
-        try {
-            $this->notify(new CustomResetPassword($token));
-            Log::info('Reset email sent successfully');
-        } catch (\Exception $e) {
-            Log::error('Failed to send reset email: ' . $e->getMessage());
-        }
-    }
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $fillable = [
         'name',
@@ -60,7 +28,7 @@ class User extends Authenticatable implements FilamentUser, CanResetPassword
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $hidden = [
         'password',
@@ -80,23 +48,28 @@ class User extends Authenticatable implements FilamentUser, CanResetPassword
         ];
     }
 
-    public function owner()
+    public function penghuni(): HasOne
     {
-        return $this->hasOne(Owner::class, 'user_id', 'id');
+        return $this->hasOne(Penghuni::class);
     }
 
-    public function penghuni()
+    public function mitra(): HasOne
     {
-        return $this->hasOne(Penghuni::class, 'user_id');
+        return $this->hasOne(Mitra::class);
     }
 
-    public function mitra()
+    public function tickets()
     {
-        return $this->hasOne(Mitra::class, 'user_id');
+        return $this->hasMany(Ticket::class);
     }
 
     public function ticketMessages()
     {
         return $this->hasMany(TicketMessage::class);
+    }
+
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new CustomResetPassword($token));
     }
 }

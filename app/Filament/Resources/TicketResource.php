@@ -3,221 +3,270 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TicketResource\Pages;
-use App\Filament\Resources\TicketResource\RelationManagers;
 use App\Models\Ticket;
 use App\Models\Kamar;
+use App\Models\Unit;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\FileUpload;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Resources\Components\Tab;
+use Illuminate\Support\Facades\Auth;
+use Filament\Navigation\NavigationItem;
+
 class TicketResource extends Resource
 {
     protected static ?string $model = Ticket::class;
+    protected static ?string $navigationIcon = 'heroicon-o-ticket';
+    protected static ?string $navigationLabel = 'Ticketing';
+    protected static ?string $modelLabel = 'Ticket';
+    protected static ?string $pluralModelLabel = 'Tickets';
+    protected static ?int $navigationSort = 6;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
-    public static function canViewAny(): bool
-    {
-        return auth()->user()?->hasRole(['User','Admin']);
-    }
-
-    public static function canCreate(): bool
-    {
-        return auth()->user()?->hasRole('User');
-    }
-    public static function canEdit(Model $record): bool
-    {
-        return auth()->user()?->hasRole('User') && $record->user_id === auth()->id();
-
-    }
-
-    public static function canDelete(Model $record): bool
-    {
-        return false;
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        $query = parent::getEloquentQuery();
-
-        if (!auth()->user()?->hasRole('Admin')) {
-            $query->where('user_id', auth()->id());
-        }
-
-        return $query->orderBy('created_at'); // paling lama muncul paling atas
-    }
-
-    public static function getNavigationBadge(): ?string
-    {
-        // Hanya user (bukan admin)
-        if (auth()->user()?->hasRole('User')) {
-            // Hitung jumlah pesan yang belum dibaca oleh user ini
-            return \App\Models\TicketMessage::whereHas('ticket', function ($query) {
-                    $query->where('user_id', auth()->id());
-                })
-                ->where('user_id', '!=', auth()->id()) // dari admin
-                ->whereNull('read_at') // belum dibaca
-                ->count();
-        }
-
-        if (auth()->user()?->hasRole('Admin')) {
-            return (string) Ticket::where('status', 'Baru')->count();
-        }
-
-        return null; // Hanya admin yang melihat badge
-    }
-
-    public function getDefaultActiveTab(): string
-    {
-        return 'baru';
-    }
-
-
-
-    public static function form(Forms\Form $form): Forms\Form
+    public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                TextInput::make('judul')
-                    ->label('Judul Laporan')
-                    ->required(),
+                Forms\Components\Section::make('Informasi Ticket')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Select::make('kategori')
+                                    ->label('Kategori')
+                                    ->options([
+                                        'Kebocoran' => 'Kebocoran',
+                                        'Listrik' => 'Listrik',
+                                        'AC' => 'AC',
+                                        'Furniture' => 'Furniture',
+                                        'Kebersihan' => 'Kebersihan',
+                                        'Keamanan' => 'Keamanan',
+                                        'Lainnya' => 'Lainnya',
+                                    ])
+                                    ->required(),
 
-                Textarea::make('deskripsi')
-                    ->label('Deskripsi Keluhan')
-                    ->required()
-                    ->autosize(),
+                                Forms\Components\Select::make('prioritas')
+                                    ->label('Prioritas')
+                                    ->options([
+                                        'Rendah' => 'Rendah',
+                                        'Sedang' => 'Sedang',
+                                        'Tinggi' => 'Tinggi',
+                                        'Mendesak' => 'Mendesak',
+                                    ])
+                                    ->required(),
+                            ]),
 
-                Select::make('kategori')
-                    ->label('Kategori')
-                    ->options([
-                        'Kebocoran' => 'Kebocoran',
-                        'Kerusakan' => 'Kerusakan',
-                        'Layanan'   => 'Layanan',
-                        'Penghuni'  => 'Penghuni',
-                        'Keamanan'  => 'Keamanan',
-                        'Lainnya'   => 'Lainnya',
+                        Forms\Components\TextInput::make('judul')
+                            ->label('Judul')
+                            ->required()
+                            ->maxLength(255),
+
+                        Forms\Components\Textarea::make('deskripsi')
+                            ->label('Deskripsi')
+                            ->required()
+                            ->rows(4),
+
+                        Forms\Components\FileUpload::make('foto')
+                            ->label('Foto Bukti')
+                            ->image()
+                            ->directory('ticket-photos')
+                            ->maxSize(2048)
+                            ->nullable(),
                     ]),
-                    // ->required(),
 
-                Select::make('prioritas')
-                    ->label('Prioritas')
-                    ->options([
-                        'Rendah' => 'Rendah',
-                        'Sedang' => 'Sedang',
-                        'Tinggi' => 'Tinggi',
+                Forms\Components\Section::make('Detail Lokasi')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Select::make('unit_id')
+                                    ->label('Unit')
+                                    ->options(Unit::pluck('nama', 'id'))
+                                    ->searchable()
+                                    ->required()
+                                    ->reactive()
+                                    ->afterStateUpdated(fn(callable $set) => $set('kamar_id', null)),
+
+                                Forms\Components\Select::make('kamar_id')
+                                    ->label('Kamar')
+                                    ->options(function (callable $get) {
+                                        $unitId = $get('unit_id');
+                                        if (!$unitId)
+                                            return [];
+                                        return Kamar::where('unit_id', $unitId)->pluck('nama', 'id');
+                                    })
+                                    ->searchable()
+                                    ->required(),
+                            ]),
                     ])
-                    ->default('Sedang')
-                    ->required(),
+                    ->visible(fn() => Auth::user()->hasRole(['Superadmin', 'Admin'])),
 
-                TextInput::make('unit_nama')
-                ->label('Unit')
-                ->disabled()
-                ->reactive()
-                ->afterStateHydrated(function ($state, callable $set, $get) {
-                    $kamar = Kamar::find($get('kamar_id'));
-                    if ($kamar) {
-                        $set('unit_nama', $kamar->unit->nama_cluster ?? '-');
-                    }
-                }),
-                Select::make('kamar_id')
-                    ->label('Pilih Kamar')
-                    ->options(function () {
-                        $user = auth()->user();
-                        $penghuni = $user->penghuni;
+                Forms\Components\Section::make('Status & Tanggal')
+                    ->schema([
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\Select::make('status')
+                                    ->label('Status')
+                                    ->options([
+                                        'Baru' => 'Baru',
+                                        'Diproses' => 'Diproses',
+                                        'Selesai' => 'Selesai',
+                                        'Ditolak' => 'Ditolak',
+                                    ])
+                                    ->default('Baru')
+                                    ->required(),
 
-                        if (! $penghuni) {
-                            return [];
-                        }
+                                Forms\Components\DatePicker::make('tanggal_lapor')
+                                    ->label('Tanggal Lapor')
+                                    ->default(now())
+                                    ->required(),
 
-                        // Ambil semua kamar yang aktif (log status IN)
-                        return $penghuni->logs()
-                            ->where('status', 'checkin')
-                            ->with('kamar')
-                            ->get()
-                            ->pluck('kamar.nama', 'kamar.id'); // sesuaikan field
-                    })
-                    ->searchable(),
-                    // ->required(),
+                                Forms\Components\DatePicker::make('tanggal_selesai')
+                                    ->label('Tanggal Selesai')
+                                    ->nullable(),
+                            ]),
 
-
-                FileUpload::make('foto')
-                    ->label('Foto Bukti')
-                    ->image()
-                    ->directory('ticketing/foto')
-                    ->maxSize(2048)
-                    ->nullable(),
+                        Forms\Components\Textarea::make('respon_admin')
+                            ->label('Respon Admin')
+                            ->rows(3)
+                            ->nullable(),
+                    ])
+                    ->visible(fn() => Auth::user()->hasRole(['Superadmin', 'Admin'])),
             ]);
     }
 
     public static function table(Table $table): Table
-        {
-            return $table
-                ->columns([
-                    Tables\Columns\TextColumn::make('judul')->label('Judul'),
-                    Tables\Columns\TextColumn::make('kategori')->label('Kategori'),
-                    Tables\Columns\TextColumn::make('prioritas')->label('Prioritas'),
-                    Tables\Columns\TextColumn::make('status')->label('Status')
-                        ->badge()
-                        ->color(fn (string $state) => match ($state) {
-                            'Baru' => 'danger',
-                            'Diproses' => 'warning',
-                            'Selesai' => 'success',
-                            'Ditolak' => 'gray',
-                        }),
-                    Tables\Columns\TextColumn::make('created_at')
-                        ->label('Dibuat')
-                        ->dateTime('d M Y H:i'),
-                    Tables\Columns\TextColumn::make('user.penghuni.nama')
-                        ->label('Nama Penghuni')
-                        ->visible(fn () => auth()->user()?->hasRole('Admin')),
-                        Tables\Columns\TextColumn::make('waiting_time')
-                        ->label('Waiting')
-                        ->state(function (Model $record) {
-                            return now()->diffForHumans($record->created_at, [
-                                'parts' => 2, // Biar bisa "1 day 3 hours"
-                                'short' => true, // Lebih singkat formatnya
-                                'syntax' => \Carbon\CarbonInterface::DIFF_RELATIVE_TO_NOW,
-                            ]);
-                        })
-                        ->sortable()
-                        ->icon('heroicon-m-clock'),
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('judul')
+                    ->label('Judul')
+                    ->searchable()
+                    ->sortable()
+                    ->limit(30),
 
-                ])
-                ->actions([
-                    // Tables\Actions\EditAction::make(),
-                    Tables\Actions\Action::make('Balas')
-                        ->label('Balas')
-                        ->icon('heroicon-m-chat-bubble-left-ellipsis')
-                        ->url(fn (Model $record) => TicketResource::getUrl('response', ['record' => $record]))
-                        ->visible(fn () => auth()->user()?->hasRole('Admin')),
+                Tables\Columns\BadgeColumn::make('status')
+                    ->label('Status')
+                    ->colors([
+                        'danger' => 'Baru',
+                        'warning' => 'Diproses',
+                        'success' => 'Selesai',
+                        'secondary' => 'Ditolak',
+                    ]),
 
-                    // Percakapan Ticket
-                    Tables\Actions\Action::make('Percakapan')
-                        ->label('Percakapan')
-                        ->icon('heroicon-m-chat-bubble-left')
-                        ->url(fn (Model $record) => TicketResource::getUrl('conversation', ['record' => $record->id]))
-                        ->visible(fn () => auth()->user()?->hasRole('User')),
+                Tables\Columns\BadgeColumn::make('prioritas')
+                    ->label('Prioritas')
+                    ->colors([
+                        'secondary' => 'Rendah',
+                        'info' => 'Sedang',
+                        'warning' => 'Tinggi',
+                        'danger' => 'Mendesak',
+                    ]),
 
-                ])
-                ->bulkActions([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]);
-        }
+                Tables\Columns\TextColumn::make('kategori')
+                    ->label('Kategori')
+                    ->badge()
+                    ->color('primary'),
+
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('Pelapor')
+                    ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('kamar.nama')
+                    ->label('Kamar')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('tanggal_lapor')
+                    ->label('Tanggal Lapor')
+                    ->date('d M Y')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('status')
+                    ->options([
+                        'Baru' => 'Baru',
+                        'Diproses' => 'Diproses',
+                        'Selesai' => 'Selesai',
+                        'Ditolak' => 'Ditolak',
+                    ]),
+                Tables\Filters\SelectFilter::make('prioritas')
+                    ->options([
+                        'Rendah' => 'Rendah',
+                        'Sedang' => 'Sedang',
+                        'Tinggi' => 'Tinggi',
+                        'Mendesak' => 'Mendesak',
+                    ]),
+                Tables\Filters\SelectFilter::make('kategori')
+                    ->options([
+                        'Kebocoran' => 'Kebocoran',
+                        'Listrik' => 'Listrik',
+                        'AC' => 'AC',
+                        'Furniture' => 'Furniture',
+                        'Kebersihan' => 'Kebersihan',
+                        'Keamanan' => 'Keamanan',
+                        'Lainnya' => 'Lainnya',
+                    ]),
+            ])
+            ->actions([
+                Tables\Actions\Action::make('conversation')
+                    ->label('Chat')
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->color('primary')
+                    ->url(fn(Ticket $record): string => route('filament.admin.resources.tickets.conversation', $record)),
+
+                Tables\Actions\EditAction::make()
+                    ->visible(fn() => Auth::user()->hasRole(['Superadmin', 'Admin'])),
+
+                Tables\Actions\Action::make('mark_resolved')
+                    ->label('Selesai')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->action(fn(Ticket $record) => $record->update([
+                        'status' => 'Selesai',
+                        'tanggal_selesai' => now()->toDateString(),
+                    ]))
+                    ->visible(
+                        fn(Ticket $record) =>
+                        Auth::user()->hasRole(['Superadmin', 'Admin']) &&
+                        $record->status !== 'Selesai'
+                    ),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->visible(fn() => Auth::user()->hasRole(['Superadmin', 'Admin'])),
+
+                    Tables\Actions\BulkAction::make('mark_resolved')
+                        ->label('Tandai Selesai')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(fn($records) => $records->each(fn($record) => $record->update([
+                            'status' => 'Selesai',
+                            'tanggal_selesai' => now()->toDateString(),
+                        ])))
+                        ->visible(fn() => Auth::user()->hasRole(['Superadmin', 'Admin'])),
+                ]),
+            ])
+            ->modifyQueryUsing(function (Builder $query) {
+                if (!Auth::user()->hasRole(['Superadmin', 'Admin'])) {
+                    return $query->where('user_id', Auth::id());
+                }
+                return $query;
+            });
+    }
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
@@ -226,8 +275,23 @@ class TicketResource extends Resource
             'index' => Pages\ListTickets::route('/'),
             'create' => Pages\CreateTicket::route('/create'),
             'edit' => Pages\EditTicket::route('/{record}/edit'),
-            'response' => Pages\TicketResponse::route('/{record}/response'),
             'conversation' => Pages\TicketConversation::route('/{record}/conversation'),
         ];
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        if (Auth::user()->hasRole(['Superadmin', 'Admin'])) {
+            return static::getModel()::where('status', 'Baru')->count() ?: null;
+        }
+
+        return static::getModel()::where('user_id', Auth::id())
+            ->whereIn('status', ['Baru', 'Diproses'])
+            ->count() ?: null;
+    }
+
+    public static function canCreate(): bool
+    {
+        return !Auth::user()->hasRole(['Superadmin', 'Admin']);
     }
 }

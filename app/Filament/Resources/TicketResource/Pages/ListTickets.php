@@ -7,7 +7,7 @@ use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
 use Illuminate\Database\Eloquent\Builder;
-use App\Models\Ticket;
+use Illuminate\Support\Facades\Auth;
 
 class ListTickets extends ListRecords
 {
@@ -16,48 +16,44 @@ class ListTickets extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->visible(fn() => !Auth::user()->hasRole(['Superadmin', 'Admin'])),
         ];
     }
 
-        public function getTabs(): array
+    public function getTabs(): array
     {
-        if (! auth()->user()?->hasRole('Admin')) {
-            return [];
+        if (Auth::user()->hasRole(['Superadmin', 'Admin'])) {
+            return [
+                'semua' => Tab::make('Semua')
+                    ->badge(fn() => $this->getModel()::count()),
+
+                'baru' => Tab::make('Baru')
+                    ->modifyQueryUsing(fn(Builder $query) => $query->where('status', 'Baru'))
+                    ->badge(fn() => $this->getModel()::where('status', 'Baru')->count()),
+
+                'diproses' => Tab::make('Diproses')
+                    ->modifyQueryUsing(fn(Builder $query) => $query->where('status', 'Diproses'))
+                    ->badge(fn() => $this->getModel()::where('status', 'Diproses')->count()),
+
+                'selesai' => Tab::make('Selesai')
+                    ->modifyQueryUsing(fn(Builder $query) => $query->where('status', 'Selesai'))
+                    ->badge(fn() => $this->getModel()::where('status', 'Selesai')->count()),
+
+                'ditolak' => Tab::make('Ditolak')
+                    ->modifyQueryUsing(fn(Builder $query) => $query->where('status', 'Ditolak'))
+                    ->badge(fn() => $this->getModel()::where('status', 'Ditolak')->count()),
+            ];
         }
 
         return [
-            'baru' => Tab::make('Baru')
-                ->icon('heroicon-m-bell-alert')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'Baru'))
-                ->badge(Ticket::where('status', 'Baru')->count())
-                ->badgeColor('danger'),
-
-            'diproses' => Tab::make('Diproses')
-                ->icon('heroicon-m-arrow-path')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'Diproses'))
-                ->badge(Ticket::where('status', 'Diproses')->count())
-                ->badgeColor('warning'),
+            'aktif' => Tab::make('Aktif')
+                ->modifyQueryUsing(fn(Builder $query) => $query->whereIn('status', ['Baru', 'Diproses']))
+                ->badge(fn() => $this->getModel()::where('user_id', Auth::id())->whereIn('status', ['Baru', 'Diproses'])->count()),
 
             'selesai' => Tab::make('Selesai')
-                ->icon('heroicon-m-check-badge')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'Selesai'))
-                ->badge(Ticket::where('status', 'Selesai')->count())
-                ->badgeColor('success'),
-
-            'ditolak' => Tab::make('Ditolak')
-                ->icon('heroicon-m-x-circle')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'Ditolak'))
-                ->badge(Ticket::where('status', 'Ditolak')->count())
-                ->badgeColor('gray'),
-
-            'semua' => Tab::make('Semua Tiket')
-                ->icon('heroicon-m-inbox'),
+                ->modifyQueryUsing(fn(Builder $query) => $query->where('status', 'Selesai'))
+                ->badge(fn() => $this->getModel()::where('user_id', Auth::id())->where('status', 'Selesai')->count()),
         ];
-    }
-
-    public function getDefaultActiveTab(): string
-    {
-        return 'baru';
     }
 }

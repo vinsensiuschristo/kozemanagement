@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\MitraResource\Pages;
-use App\Filament\Resources\MitraResource\RelationManagers;
 use App\Models\Mitra;
 use App\Models\User;
 use Filament\Forms;
@@ -13,105 +12,103 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Grid;
 
 class MitraResource extends Resource
 {
     protected static ?string $model = Mitra::class;
 
-    public static function canViewAny(): bool
-    {
-        return auth()->user()?->hasRole('Superadmin');
-    }
-
-    public static function canCreate(): bool
-    {
-        return auth()->user()?->hasRole('Superadmin');
-    }
-
-    public static function canEdit(Model $record): bool
-    {
-        return auth()->user()?->hasRole('Superadmin');
-    }
-
-    public static function canDelete(Model $record): bool
-    {
-        return auth()->user()?->hasRole('Superadmin');
-    }
-
     protected static ?string $navigationIcon = 'heroicon-o-building-storefront';
     protected static ?string $navigationLabel = 'Mitra';
-    protected static ?string $navigationGroup = 'Manajemen Voucher';
+    protected static ?string $pluralLabel = 'Mitra';
+    protected static ?int $navigationSort = 6;
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->hasRole(['Admin', 'Superadmin']);
+    }
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Informasi Mitra')
+                Section::make('Informasi Mitra')
+                    ->description('Data dasar mitra bisnis')
                     ->schema([
-                        Forms\Components\TextInput::make('nama')
-                            ->required()
-                            ->label('Nama Mitra')
-                            ->maxLength(255),
-                        Forms\Components\Select::make('kategori')
-                            ->required()
-                            ->options([
-                                "cafe" => "Cafe",
-                                "restoran" => "Restoran",
-                                "hotel" => "Hotel",
-                                "wisata" => "Wisata",
-                                "laundry" => "Laundry",
-                                "lainnya" => "Lainnya",
-                            ])
-                            ->native(false),
-                        Forms\Components\TextInput::make('telepon')
-                            ->tel()
-                            ->required()
-                            ->label('Telepon Mitra')
-                            ->maxLength(20),
-                        Forms\Components\TextInput::make('alamat')
-                            ->nullable()
-                            ->label('Alamat Mitra')
-                            ->maxLength(255),
-                        Forms\Components\Textarea::make('deskripsi')
-                            ->nullable()
-                            ->label('Deskripsi Mitra')
-                            ->maxLength(500)
-                            ->rows(3),
-                    ])
-                    ->columns(2),
+                        Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('nama')
+                                    ->label('Nama Mitra')
+                                    ->required()
+                                    ->maxLength(255),
 
-                Forms\Components\Section::make('Akun Login Mitra')
-                    ->description('Buat akun login untuk mitra agar dapat mengakses sistem')
+                                Forms\Components\TextInput::make('kategori')
+                                    ->label('Kategori Bisnis')
+                                    ->placeholder('Contoh: Restoran, Retail, Jasa')
+                                    ->maxLength(100),
+
+                                Forms\Components\TextInput::make('kontak_person')
+                                    ->label('Nama Kontak Person')
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('nomor_telepon')
+                                    ->label('Nomor Telepon')
+                                    ->tel()
+                                    ->maxLength(20),
+
+                                Forms\Components\TextInput::make('email')
+                                    ->label('Email Mitra')
+                                    ->email()
+                                    ->maxLength(255),
+
+                                Forms\Components\Select::make('status')
+                                    ->label('Status')
+                                    ->options([
+                                        'aktif' => 'Aktif',
+                                        'nonaktif' => 'Non-aktif',
+                                        'pending' => 'Pending',
+                                    ])
+                                    ->default('aktif')
+                                    ->required(),
+                            ]),
+
+                        Forms\Components\Textarea::make('alamat')
+                            ->label('Alamat Lengkap')
+                            ->rows(3)
+                            ->columnSpanFull(),
+
+                        Forms\Components\Textarea::make('deskripsi')
+                            ->label('Deskripsi Bisnis')
+                            ->rows(3)
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Akun Login Mitra')
+                    ->description('Buat akun login untuk mitra ini')
                     ->schema([
-                        Forms\Components\TextInput::make('user.name')
-                            ->label('Nama Lengkap')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('user.email')
-                            ->label('Email')
-                            ->email()
-                            ->required()
-                            ->unique(User::class, 'email', ignoreRecord: true)
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('user.password')
-                            ->label('Password')
-                            ->password()
-                            ->required(fn(string $context): bool => $context === 'create')
-                            ->minLength(8)
-                            ->dehydrateStateUsing(fn($state) => Hash::make($state))
-                            ->dehydrated(fn($state) => filled($state))
-                            ->helperText('Minimal 8 karakter. Kosongkan jika tidak ingin mengubah password.'),
-                        Forms\Components\TextInput::make('user.password_confirmation')
-                            ->label('Konfirmasi Password')
-                            ->password()
-                            ->required(fn(string $context): bool => $context === 'create')
-                            ->same('user.password')
-                            ->dehydrated(false),
+                        Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('user_email')
+                                    ->label('Email Login')
+                                    ->email()
+                                    ->required()
+                                    ->unique(User::class, 'email', ignoreRecord: true)
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('user_password')
+                                    ->label('Password')
+                                    ->password()
+                                    ->required(fn(string $context): bool => $context === 'create')
+                                    ->minLength(8)
+                                    ->maxLength(255)
+                                    ->dehydrateStateUsing(fn($state) => Hash::make($state))
+                                    ->dehydrated(fn($state) => filled($state))
+                                    ->revealable(),
+                            ]),
                     ])
-                    ->columns(2),
+                    ->visible(fn(string $context): bool => $context === 'create'),
             ]);
     }
 
@@ -123,71 +120,58 @@ class MitraResource extends Resource
                     ->label('Nama Mitra')
                     ->searchable()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('kategori')
+                    ->label('Kategori')
                     ->badge()
-                    ->color(fn(string $state) => match ($state) {
-                        'laundry' => 'success',
-                        'cafe' => 'warning',
-                        'restoran' => 'info',
-                        'hotel' => 'primary',
-                        'wisata' => 'danger',
-                        'lainnya' => 'secondary',
-                        default => 'gray',
-                    }),
-                Tables\Columns\TextColumn::make('telepon')
+                    ->color('info'),
+
+                Tables\Columns\TextColumn::make('kontak_person')
+                    ->label('Kontak Person')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('nomor_telepon')
                     ->label('Telepon')
                     ->searchable(),
+
+                Tables\Columns\TextColumn::make('email')
+                    ->label('Email')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'aktif' => 'success',
+                        'nonaktif' => 'danger',
+                        'pending' => 'warning',
+                    }),
+
                 Tables\Columns\TextColumn::make('user.email')
                     ->label('Email Login')
-                    ->searchable()
-                    ->copyable()
-                    ->copyMessage('Email disalin!'),
-                Tables\Columns\IconColumn::make('user.id')
-                    ->label('Akun Aktif')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-x-circle')
-                    ->trueColor('success')
-                    ->falseColor('danger'),
+                    ->searchable(),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')
-                    ->dateTime()
+                    ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('kategori')
+                Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        "cafe" => "Cafe",
-                        "restoran" => "Restoran",
-                        "hotel" => "Hotel",
-                        "wisata" => "Wisata",
-                        "laundry" => "Laundry",
-                        "lainnya" => "Lainnya",
-                    ])
-                    ->native(false),
+                        'aktif' => 'Aktif',
+                        'nonaktif' => 'Non-aktif',
+                        'pending' => 'Pending',
+                    ]),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make()
-                    ->before(function (Mitra $record) {
-                        // Hapus user terkait jika ada
-                        if ($record->user) {
-                            $record->user->delete();
-                        }
-                    }),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
-                        ->before(function ($records) {
-                            // Hapus user terkait untuk setiap record
-                            foreach ($records as $record) {
-                                if ($record->user) {
-                                    $record->user->delete();
-                                }
-                            }
-                        }),
+                    Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }

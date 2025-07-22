@@ -36,7 +36,18 @@ class AssignVoucherGroup extends Page
                     ->schema([
                         Forms\Components\Select::make('voucher_id')
                             ->label('Pilih Voucher')
-                            ->options(Voucher::with('mitra')->get()->pluck('nama_dengan_mitra', 'id'))
+                            ->options(function () {
+                                return Voucher::with('mitra')
+                                    ->whereHas('mitra') // Hanya voucher yang memiliki mitra
+                                    ->get()
+                                    ->mapWithKeys(function ($voucher) {
+                                        $label = $voucher->nama;
+                                        if ($voucher->mitra) {
+                                            $label .= ' (' . $voucher->mitra->nama . ')';
+                                        }
+                                        return [$voucher->id => $label];
+                                    });
+                            })
                             ->required()
                             ->searchable()
                             ->preload()
@@ -74,8 +85,13 @@ class AssignVoucherGroup extends Page
         try {
             DB::beginTransaction();
 
-            $voucher = Voucher::findOrFail($data['voucher_id']);
+            $voucher = Voucher::with('mitra')->findOrFail($data['voucher_id']);
             $penghuniIds = $data['penghuni_ids'];
+
+            // Validasi voucher memiliki mitra
+            if (!$voucher->mitra) {
+                throw new \Exception('Voucher tidak memiliki mitra yang valid.');
+            }
 
             $assignedCount = 0;
             $duplicateCount = 0;
