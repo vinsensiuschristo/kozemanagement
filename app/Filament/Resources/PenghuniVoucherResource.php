@@ -24,16 +24,25 @@ class PenghuniVoucherResource extends Resource
     protected static ?string $navigationGroup = 'Vouchers';
     protected static ?string $navigationLabel = 'Riwayat Voucher';
 
-    public static function canCreate(): bool { return false; }
-    public static function canEdit(Model $record): bool { return false; }
-    public static function canDelete(Model $record): bool { return false; }
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+    public static function canEdit(Model $record): bool
+    {
+        return false;
+    }
+    public static function canDelete(Model $record): bool
+    {
+        return false;
+    }
 
     public static function canViewAny(): bool
     {
         return auth()->user()->hasRole('User');
     }
 
-
+    // Batasi hanya untuk penghuni yang sedang login 
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
@@ -63,8 +72,8 @@ class PenghuniVoucherResource extends Resource
                     ->sortable()
                     ->searchable(),
                 TextColumn::make('periode')
-                ->label('Periode')
-                ->date('F Y')
+                    ->label('Periode')
+                    ->date('F Y')
             ])
             ->filters([
                 SelectFilter::make('is_used')

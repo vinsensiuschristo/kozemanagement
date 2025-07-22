@@ -10,9 +10,5 @@ Artisan::command('inspire', function () {
 // ini buat scheduler CRON JOB
 // Email ulang tahun
 Schedule::command('email:penghuni-birthday')->dailyAt('08:00')
-->timezone('Asia/Jakarta')
-->onOneServer();
-
-// generate voucher per bulan
-Schedule::command('generate:monthly-vouchers')->monthlyOn(1, '01:00')
-->timezone('Asia/Jakarta');
+    ->timezone('Asia/Jakarta')
+    ->onOneServer();

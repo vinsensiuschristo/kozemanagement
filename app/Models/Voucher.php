@@ -33,4 +33,10 @@ class Voucher extends Model
     {
         return $this->hasMany(PenghuniVoucher::class, 'voucher_id');
     }
+
+    // Accessor untuk menampilkan nama voucher dengan mitra
+    public function getNamaDenganMitraAttribute()
+    {
+        return $this->nama . ' (' . $this->mitra->nama . ')';
+    }
 }

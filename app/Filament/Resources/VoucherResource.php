@@ -3,19 +3,12 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\VoucherResource\Pages;
-use App\Filament\Resources\VoucherResource\RelationManagers;
 use App\Models\Voucher;
 use Filament\Forms;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
 
@@ -23,24 +16,24 @@ class VoucherResource extends Resource
 {
     protected static ?string $model = Voucher::class;
 
-    public static function canViewAny():bool
+    public static function canViewAny(): bool
     {
         return Auth::user()->hasRole(['Superadmin', 'Admin']);
     }
 
     public static function canCreate(): bool
     {
-        return Auth::user()->hasRole('Superadmin');
+        return Auth::user()->hasRole(['Superadmin', 'Admin']);
     }
 
     public static function canEdit(Model $record): bool
     {
-        return Auth::user()->hasRole('Superadmin');
+        return Auth::user()->hasRole(['Superadmin', 'Admin']);
     }
 
     public static function canDelete(Model $record): bool
     {
-        return Auth::user()->hasRole('Superadmin');
+        return Auth::user()->hasRole(['Superadmin', 'Admin']);
     }
 
     public static function canView(Model $record): bool
@@ -58,46 +51,28 @@ class VoucherResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('nama')
+                Forms\Components\TextInput::make('nama')
                     ->label('Nama Voucher')
                     ->required()
                     ->maxLength(255),
-                TextInput::make('deskripsi')
+
+                Forms\Components\Textarea::make('deskripsi')
                     ->label('Deskripsi')
                     ->columnSpanFull()
                     ->maxLength(500),
-                TextInput::make('kode_voucher')
+
+                Forms\Components\TextInput::make('kode_voucher')
                     ->label('Kode Voucher')
                     ->required()
                     ->maxLength(20)
                     ->unique(ignoreRecord: true),
-                Select::make('mitra_id')
+
+                Forms\Components\Select::make('mitra_id')
                     ->label('Mitra')
                     ->relationship('mitra', 'nama')
                     ->required()
                     ->searchable()
                     ->preload(),
-
-                Repeater::make('unitVoucherRules')
-                ->label('Kuota Voucher per Unit')
-                ->relationship('unitVoucherRules')
-                ->schema([
-                    Select::make('unit_id')
-                        ->label('Unit')
-                        ->relationship('unit', 'nama_cluster')
-                        ->required()
-                        ->searchable()
-                        ->preload(),
-                    TextInput::make('kuota_per_bulan')
-                        ->label('Kuota')
-                        ->numeric()
-                        ->required()
-                        ->minValue(1)
-                        ->default(1),
-                ])
-                ->columns(2)
-                ->collapsible()
-                ->createItemButtonLabel('Tambah Kuota untuk Unit')
             ]);
     }
 
@@ -105,37 +80,55 @@ class VoucherResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('nama')
+                Tables\Columns\TextColumn::make('nama')
                     ->label('Nama Voucher')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('kode_voucher')
+
+                Tables\Columns\TextColumn::make('kode_voucher')
                     ->label('Kode Voucher')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('mitra.nama')
+
+                Tables\Columns\TextColumn::make('mitra.nama')
                     ->label('Mitra')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('deskripsi')
+
+                Tables\Columns\TextColumn::make('deskripsi')
                     ->label('Deskripsi')
                     ->limit(50)
                     ->searchable(),
+
+                Tables\Columns\TextColumn::make('penghuniVouchers_count')
+                    ->label('Jumlah Pengguna')
+                    ->counts('penghuniVouchers')
+                    ->badge()
+                    ->color('info'),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('mitra_id')
+                    ->label('Mitra')
+                    ->relationship('mitra', 'nama')
+                    ->searchable(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make()
-                    ->visible(fn () => Auth::user()->hasRole('Superadmin')),
+                    ->visible(fn() => Auth::user()->hasRole(['Superadmin', 'Admin'])),
                 Tables\Actions\DeleteAction::make()
-                    ->visible(fn () => Auth::user()->hasRole('Superadmin')),
+                    ->visible(fn() => Auth::user()->hasRole(['Superadmin', 'Admin'])),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->visible(fn () => Auth::user()->hasRole('Superadmin')),
+                        ->visible(fn() => Auth::user()->hasRole(['Superadmin', 'Admin'])),
                 ]),
             ]);
     }
@@ -153,6 +146,7 @@ class VoucherResource extends Resource
             'index' => Pages\ListVouchers::route('/'),
             'create' => Pages\CreateVoucher::route('/create'),
             'edit' => Pages\EditVoucher::route('/{record}/edit'),
+            'assign' => Pages\AssignVoucherGroup::route('/assign'),
         ];
     }
 }

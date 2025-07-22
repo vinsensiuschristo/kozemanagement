@@ -13,7 +13,14 @@ class ListVouchers extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Buat Voucher Baru')
+                ->icon('heroicon-o-plus'),
+            Actions\Action::make('assign')
+                ->label('Assign Voucher')
+                ->icon('heroicon-o-gift')
+                ->color('success')
+                ->url(fn(): string => static::$resource::getUrl('assign')),
         ];
     }
 }
