@@ -30,30 +30,36 @@ class ListTickets extends ListRecords
 
                 'baru' => Tab::make('Baru')
                     ->modifyQueryUsing(fn(Builder $query) => $query->where('status', 'Baru'))
-                    ->badge(fn() => $this->getModel()::where('status', 'Baru')->count()),
+                    ->badge(fn() => $this->getModel()::where('status', 'Baru')->count())
+                    ->badgeColor('danger'),
 
                 'diproses' => Tab::make('Diproses')
                     ->modifyQueryUsing(fn(Builder $query) => $query->where('status', 'Diproses'))
-                    ->badge(fn() => $this->getModel()::where('status', 'Diproses')->count()),
+                    ->badge(fn() => $this->getModel()::where('status', 'Diproses')->count())
+                    ->badgeColor('warning'),
 
                 'selesai' => Tab::make('Selesai')
                     ->modifyQueryUsing(fn(Builder $query) => $query->where('status', 'Selesai'))
-                    ->badge(fn() => $this->getModel()::where('status', 'Selesai')->count()),
+                    ->badge(fn() => $this->getModel()::where('status', 'Selesai')->count())
+                    ->badgeColor('success'),
 
                 'ditolak' => Tab::make('Ditolak')
                     ->modifyQueryUsing(fn(Builder $query) => $query->where('status', 'Ditolak'))
-                    ->badge(fn() => $this->getModel()::where('status', 'Ditolak')->count()),
+                    ->badge(fn() => $this->getModel()::where('status', 'Ditolak')->count())
+                    ->badgeColor('gray'),
             ];
         }
 
         return [
             'aktif' => Tab::make('Aktif')
                 ->modifyQueryUsing(fn(Builder $query) => $query->whereIn('status', ['Baru', 'Diproses']))
-                ->badge(fn() => $this->getModel()::where('user_id', Auth::id())->whereIn('status', ['Baru', 'Diproses'])->count()),
+                ->badge(fn() => $this->getModel()::where('user_id', Auth::id())->whereIn('status', ['Baru', 'Diproses'])->count())
+                ->badgeColor('warning'),
 
             'selesai' => Tab::make('Selesai')
                 ->modifyQueryUsing(fn(Builder $query) => $query->where('status', 'Selesai'))
-                ->badge(fn() => $this->getModel()::where('user_id', Auth::id())->where('status', 'Selesai')->count()),
+                ->badge(fn() => $this->getModel()::where('user_id', Auth::id())->where('status', 'Selesai')->count())
+                ->badgeColor('success'),
         ];
     }
 }

@@ -15,34 +15,41 @@ class CreateTicket extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $user = Auth::user();
+        $penghuni = $user->penghuni;
 
-        // Set user_id
-        $data['user_id'] = $user->id;
+        if (!$penghuni) {
+            Notification::make()
+                ->title('Error')
+                ->body('Data penghuni tidak ditemukan. Silakan hubungi admin.')
+                ->danger()
+                ->send();
 
-        // Jika user bukan admin, ambil data dari relasi penghuni
-        if (!$user->hasRole(['Superadmin', 'Admin'])) {
-            $penghuni = $user->penghuni;
-
-            if (!$penghuni) {
-                throw new \Exception('Data penghuni tidak ditemukan. Silakan hubungi administrator.');
-            }
-
-            // Ambil log penghuni yang aktif
-            $logAktif = LogPenghuni::where('penghuni_id', $penghuni->id)
-                ->where('status', 'Aktif')
-                ->first();
-
-            if (!$logAktif) {
-                throw new \Exception('Tidak ada kamar aktif ditemukan. Silakan hubungi administrator.');
-            }
-
-            $data['kamar_id'] = $logAktif->kamar_id;
-            $data['unit_id'] = $logAktif->kamar->unit_id;
+            $this->halt();
         }
 
-        // Set default values
+        // Ambil kamar aktif dari log penghuni
+        $activeLog = LogPenghuni::where('penghuni_id', $penghuni->id)
+            ->where('status', 'checkin')
+            ->whereNull('tanggal_checkout')
+            ->with('kamar.unit')
+            ->first();
+
+        if (!$activeLog) {
+            Notification::make()
+                ->title('Error')
+                ->body('Tidak ada kamar aktif ditemukan. Silakan hubungi admin.')
+                ->danger()
+                ->send();
+
+            $this->halt();
+        }
+
+        // Set data otomatis
+        $data['user_id'] = $user->id;
+        $data['kamar_id'] = $activeLog->kamar_id;
+        $data['unit_id'] = $activeLog->kamar->unit_id;
+        $data['tanggal_lapor'] = now()->toDateString();
         $data['status'] = 'Baru';
-        $data['tanggal_lapor'] = $data['tanggal_lapor'] ?? now()->toDateString();
 
         return $data;
     }
@@ -52,11 +59,27 @@ class CreateTicket extends CreateRecord
         return $this->getResource()::getUrl('index');
     }
 
-    protected function getCreatedNotification(): ?Notification
+    protected function getCreatedNotificationTitle(): ?string
     {
-        return Notification::make()
-            ->success()
-            ->title('Ticket berhasil dibuat')
-            ->body('Ticket Anda telah berhasil dibuat dan akan segera ditindaklanjuti.');
+        return 'Ticket berhasil dibuat';
+    }
+
+    protected function afterCreate(): void
+    {
+        // Kirim notifikasi ke admin
+        $admins = \App\Models\User::role(['Admin', 'Superadmin'])->get();
+
+        \Filament\Notifications\Notification::make()
+            ->title('Ticket Baru')
+            ->body("Ticket baru '{$this->record->judul}' telah dibuat oleh {$this->record->user->name}")
+            ->icon('heroicon-o-ticket')
+            ->color('warning')
+            ->actions([
+                \Filament\Notifications\Actions\Action::make('view')
+                    ->label('Lihat Ticket')
+                    ->url(route('filament.admin.resources.tickets.conversation', $this->record))
+                    ->button(),
+            ])
+            ->sendToDatabase($admins);
     }
 }

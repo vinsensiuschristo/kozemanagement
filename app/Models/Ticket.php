@@ -32,6 +32,16 @@ class Ticket extends Model
         'tanggal_selesai' => 'date',
     ];
 
+    protected static function booted()
+    {
+        static::updated(function ($ticket) {
+            // Kirim notifikasi ketika status berubah
+            if ($ticket->isDirty('status')) {
+                $ticket->sendStatusChangeNotification();
+            }
+        });
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -77,5 +87,62 @@ class Ticket extends Model
             'Mendesak' => 'danger',
             default => 'gray'
         };
+    }
+
+    public function sendStatusChangeNotification()
+    {
+        $user = $this->user;
+
+        if (!$user)
+            return;
+
+        $title = match ($this->status) {
+            'Selesai' => 'Ticket Selesai',
+            'Ditolak' => 'Ticket Ditolak',
+            'Diproses' => 'Ticket Sedang Diproses',
+            default => 'Status Ticket Berubah'
+        };
+
+        $body = match ($this->status) {
+            'Selesai' => "Ticket '{$this->judul}' telah diselesaikan oleh admin.",
+            'Ditolak' => "Ticket '{$this->judul}' ditolak oleh admin.",
+            'Diproses' => "Ticket '{$this->judul}' sedang diproses oleh admin.",
+            default => "Status ticket '{$this->judul}' berubah menjadi {$this->status}."
+        };
+
+        $color = match ($this->status) {
+            'Selesai' => 'success',
+            'Ditolak' => 'danger',
+            'Diproses' => 'warning',
+            default => 'info'
+        };
+
+        $icon = match ($this->status) {
+            'Selesai' => 'heroicon-o-check-circle',
+            'Ditolak' => 'heroicon-o-x-circle',
+            'Diproses' => 'heroicon-o-clock',
+            default => 'heroicon-o-bell'
+        };
+
+        \Filament\Notifications\Notification::make()
+            ->title($title)
+            ->body($body)
+            ->icon($icon)
+            ->color($color)
+            ->actions([
+                \Filament\Notifications\Actions\Action::make('view')
+                    ->label('Lihat Ticket')
+                    ->url(route('filament.admin.resources.tickets.conversation', $this))
+                    ->button(),
+            ])
+            ->sendToDatabase($user);
+    }
+
+    public function getUnreadMessagesCountForUser($userId): int
+    {
+        return $this->messages()
+            ->where('user_id', '!=', $userId)
+            ->whereNull('read_at')
+            ->count();
     }
 }

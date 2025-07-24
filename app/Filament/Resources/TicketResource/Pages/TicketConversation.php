@@ -157,6 +157,27 @@ class TicketConversation extends Page implements HasForms
                 })
                 ->visible(fn() => $this->record->status !== 'Selesai');
 
+            $actions[] = Action::make('reject')
+                ->label('Tolak Ticket')
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->modalHeading('Tolak Ticket')
+                ->modalDescription('Apakah Anda yakin ingin menolak ticket ini?')
+                ->action(function () {
+                    $this->record->update([
+                        'status' => 'Ditolak',
+                    ]);
+
+                    Notification::make()
+                        ->title('Ticket berhasil ditolak')
+                        ->success()
+                        ->send();
+
+                    return redirect()->to(TicketResource::getUrl('index'));
+                })
+                ->visible(fn() => !in_array($this->record->status, ['Selesai', 'Ditolak']));
+
             $actions[] = Action::make('reopen')
                 ->label('Buka Kembali')
                 ->icon('heroicon-o-arrow-path')
@@ -175,7 +196,7 @@ class TicketConversation extends Page implements HasForms
                         ->success()
                         ->send();
                 })
-                ->visible(fn() => $this->record->status === 'Selesai');
+                ->visible(fn() => in_array($this->record->status, ['Selesai', 'Ditolak']));
         }
 
         return $actions;

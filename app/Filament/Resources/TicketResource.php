@@ -177,6 +177,15 @@ class TicketResource extends Resource
                     ->label('Kamar')
                     ->searchable(),
 
+                Tables\Columns\TextColumn::make('unread_messages_count')
+                    ->label('Pesan Baru')
+                    ->getStateUsing(function (Ticket $record) {
+                        return $record->getUnreadMessagesCountForUser(Auth::id());
+                    })
+                    ->badge()
+                    ->color(fn($state) => $state > 0 ? 'danger' : 'gray')
+                    ->formatStateUsing(fn($state) => $state > 0 ? $state : ''),
+
                 Tables\Columns\TextColumn::make('tanggal_lapor')
                     ->label('Tanggal Lapor')
                     ->date('d M Y')
@@ -261,7 +270,8 @@ class TicketResource extends Resource
                     return $query->where('user_id', Auth::id());
                 }
                 return $query;
-            });
+            })
+            ->poll('30s');
     }
 
     public static function getRelations(): array
@@ -281,13 +291,28 @@ class TicketResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        if (Auth::user()->hasRole(['Superadmin', 'Admin'])) {
-            return static::getModel()::where('status', 'Baru')->count() ?: null;
-        }
+        $user = Auth::user();
 
-        return static::getModel()::where('user_id', Auth::id())
-            ->whereIn('status', ['Baru', 'Diproses'])
-            ->count() ?: null;
+        if ($user->hasRole(['Superadmin', 'Admin'])) {
+            // Untuk admin: hitung ticket baru + total pesan belum dibaca
+            $newTickets = static::getModel()::where('status', 'Baru')->count();
+            $unreadMessages = static::getModel()::whereHas('messages', function ($query) use ($user) {
+                $query->where('user_id', '!=', $user->id)
+                    ->whereNull('read_at');
+            })->count();
+
+            $total = $newTickets + $unreadMessages;
+            return $total > 0 ? (string) $total : null;
+        } else {
+            // Untuk user: hitung pesan belum dibaca dari admin
+            $unreadMessages = static::getModel()::where('user_id', $user->id)
+                ->whereHas('messages', function ($query) use ($user) {
+                    $query->where('user_id', '!=', $user->id)
+                        ->whereNull('read_at');
+                })->count();
+
+            return $unreadMessages > 0 ? (string) $unreadMessages : null;
+        }
     }
 
     public static function canCreate(): bool

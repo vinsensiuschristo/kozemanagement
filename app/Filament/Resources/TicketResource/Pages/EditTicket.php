@@ -5,7 +5,6 @@ namespace App\Filament\Resources\TicketResource\Pages;
 use App\Filament\Resources\TicketResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
-use Filament\Notifications\Notification;
 
 class EditTicket extends EditRecord
 {
@@ -18,7 +17,7 @@ class EditTicket extends EditRecord
                 ->label('Lihat Percakapan')
                 ->icon('heroicon-o-chat-bubble-left-right')
                 ->color('primary')
-                ->url(fn() => TicketResource::getUrl('conversation', ['record' => $this->record])),
+                ->url(fn() => route('filament.admin.resources.tickets.conversation', $this->record)),
 
             Actions\DeleteAction::make(),
         ];
@@ -29,11 +28,8 @@ class EditTicket extends EditRecord
         return $this->getResource()::getUrl('index');
     }
 
-    protected function getSavedNotification(): ?Notification
+    protected function getSavedNotificationTitle(): ?string
     {
-        return Notification::make()
-            ->success()
-            ->title('Ticket berhasil diperbarui')
-            ->body('Data ticket telah berhasil diperbarui.');
+        return 'Ticket berhasil diperbarui';
     }
 }
